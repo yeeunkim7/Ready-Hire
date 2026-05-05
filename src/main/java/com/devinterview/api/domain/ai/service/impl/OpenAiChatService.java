@@ -8,10 +8,8 @@ import com.devinterview.api.domain.ai.dto.QuestionGenerationCommand;
 import com.devinterview.api.domain.ai.dto.QuestionGenerationResult;
 import com.devinterview.api.domain.ai.service.ChatService;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.ArrayList;
+import java.time.Duration;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,7 +50,7 @@ public class OpenAiChatService implements ChatService {
         """;
 
     private final WebClient.Builder webClientBuilder;
-    private final ObjectMapper objectMapper;
+    private final AiResponseParser aiResponseParser;
 
     @Value("${openai.api.key}")
     private String apiKey;
@@ -60,21 +58,19 @@ public class OpenAiChatService implements ChatService {
     @Value("${openai.model}")
     private String model;
 
+    @Value("${openai.base-url:https://api.openai.com}")
+    private String baseUrl;
+
+    @Value("${openai.timeout-seconds:5}")
+    private long timeoutSeconds;
+
     @Override
     public QuestionGenerationResult generateQuestions(QuestionGenerationCommand command) {
         String userPrompt = buildQuestionPrompt(command);
         ChatCompletionResponse response = requestChatCompletion(QUESTION_SYSTEM_MESSAGE, userPrompt);
 
         String content = extractContent(response);
-        JsonNode root = parseJson(content);
-
-        List<String> questions = new ArrayList<>();
-        JsonNode questionNode = root.get("questions");
-        if (questionNode != null && questionNode.isArray()) {
-            for (JsonNode node : questionNode) {
-                questions.add(node.asText());
-            }
-        }
+        List<String> questions = aiResponseParser.parseQuestions(content);
 
         if (questions.isEmpty()) {
             throw new CustomException(ErrorCode.AI_SERVICE_ERROR, "OpenAI question response parsing failed.");
@@ -94,11 +90,16 @@ public class OpenAiChatService implements ChatService {
         ChatCompletionResponse response = requestChatCompletion(ANALYSIS_SYSTEM_MESSAGE, userPrompt);
 
         String content = extractContent(response);
-        JsonNode root = parseJson(content);
+        JsonNode root = aiResponseParser.parseFeedbackJson(content);
 
         int score = root.path("score").asInt(0);
-        String summaryFeedback = root.path("summaryFeedback").asText("");
+        String summaryFeedback = root.path("summaryFeedback").asText(
+            root.path("strengths").asText("")
+        );
         JsonNode detailedFeedback = root.path("detailedFeedback");
+        if (detailedFeedback.isMissingNode()) {
+            detailedFeedback = root;
+        }
         String detailedFeedbackJson = detailedFeedback.isMissingNode() ? "{}" : detailedFeedback.toString();
         String grade = root.path("grade").asText("C");
 
@@ -129,7 +130,7 @@ public class OpenAiChatService implements ChatService {
 
         try {
             ChatCompletionResponse response = webClientBuilder
-                .baseUrl("https://api.openai.com")
+                .baseUrl(baseUrl)
                 .build()
                 .post()
                 .uri(OPENAI_CHAT_COMPLETIONS_PATH)
@@ -138,7 +139,7 @@ public class OpenAiChatService implements ChatService {
                 .bodyValue(request)
                 .retrieve()
                 .bodyToMono(ChatCompletionResponse.class)
-                .block();
+                .block(Duration.ofSeconds(timeoutSeconds));
 
             if (response == null || response.choices() == null || response.choices().isEmpty()) {
                 throw new CustomException(ErrorCode.AI_SERVICE_ERROR, "OpenAI returned empty completion response.");
@@ -158,14 +159,6 @@ public class OpenAiChatService implements ChatService {
             throw new CustomException(ErrorCode.AI_SERVICE_ERROR, "OpenAI response content is missing.");
         }
         return firstChoice.message().content();
-    }
-
-    private JsonNode parseJson(String json) {
-        try {
-            return objectMapper.readTree(json);
-        } catch (JsonProcessingException ex) {
-            throw new CustomException(ErrorCode.AI_SERVICE_ERROR, "OpenAI response is not valid JSON.");
-        }
     }
 
     private String buildQuestionPrompt(QuestionGenerationCommand command) {
