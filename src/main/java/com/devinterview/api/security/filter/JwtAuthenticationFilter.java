@@ -1,5 +1,7 @@
 package com.devinterview.api.security.filter;
 
+import com.devinterview.api.common.dto.ApiResponse;
+import com.devinterview.api.common.exception.ErrorCode;
 import com.devinterview.api.security.jwt.JwtTokenProvider;
 import com.devinterview.api.security.user.CustomUserDetails;
 import com.devinterview.api.security.user.CustomUserDetailsService;
@@ -13,9 +15,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.time.OffsetDateTime;
-import java.util.HashMap;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -59,28 +58,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } catch (ExpiredJwtException ex) {
             SecurityContextHolder.clearContext();
-            writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "TOKEN_EXPIRED", "JWT access token expired.");
+            writeError(response, ErrorCode.TOKEN_EXPIRED);
         } catch (SecurityException ex) {
             SecurityContextHolder.clearContext();
-            writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "TOKEN_TAMPERED", "JWT signature validation failed.");
+            writeError(response, ErrorCode.TOKEN_TAMPERED);
         } catch (MalformedJwtException | IllegalArgumentException ex) {
             SecurityContextHolder.clearContext();
-            writeError(response, HttpServletResponse.SC_BAD_REQUEST, "TOKEN_MALFORMED", "Invalid JWT format.");
+            writeError(response, ErrorCode.TOKEN_MALFORMED);
         } catch (JwtException ex) {
             SecurityContextHolder.clearContext();
-            writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "TOKEN_INVALID", "JWT validation failed.");
+            writeError(response, ErrorCode.TOKEN_INVALID);
         }
     }
 
-    private void writeError(HttpServletResponse response, int status, String code, String message) throws IOException {
-        response.setStatus(status);
+    private void writeError(HttpServletResponse response, ErrorCode errorCode) throws IOException {
+        response.setStatus(errorCode.getHttpStatus().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", OffsetDateTime.now().toString());
-        body.put("code", code);
-        body.put("message", message);
-
+        ApiResponse<Void> body = ApiResponse.failure("[" + errorCode.getCode() + "] " + errorCode.getDefaultMessage());
         response.getWriter().write(objectMapper.writeValueAsString(body));
     }
 }
