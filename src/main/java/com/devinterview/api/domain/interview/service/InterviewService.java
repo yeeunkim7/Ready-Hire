@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -133,7 +134,10 @@ public class InterviewService {
 
     @Transactional(readOnly = true)
     public List<InterviewSummaryDto> getHistory(Long userId) {
-        return Collections.emptyList();
+        return interviewRepository.findByUserIdOrderByCreatedAtDesc(userId)
+            .stream()
+            .map(InterviewSummaryDto::from)
+            .collect(Collectors.toList());
     }
 
     private CareerLevel parseCareerLevel(String level) {

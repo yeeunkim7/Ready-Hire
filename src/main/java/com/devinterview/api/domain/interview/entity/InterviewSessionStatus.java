@@ -1,9 +1,9 @@
 package com.devinterview.api.domain.interview.entity;
 
 /**
- * 搁立 技记 柳青 惑怕.
+ * \uBA74\uC811 \uC138\uC158 \uC0C1\uD0DC.
  */
 public enum InterviewSessionStatus {
-    IN_PROGRESS,
-    COMPLETED
+    IN_PROGRESS, // \uBA74\uC811 \uC9C4\uD589 \uC911
+    COMPLETED // \uBA74\uC811 \uC644\uB8CC
 }
