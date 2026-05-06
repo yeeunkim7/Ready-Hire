@@ -1,17 +1,14 @@
 package com.devinterview.api.auth.controller;
 
-import com.devinterview.api.auth.dto.ApiMessageResponse;
 import com.devinterview.api.auth.dto.AuthTokenResponse;
 import com.devinterview.api.auth.dto.LoginRequest;
 import com.devinterview.api.auth.dto.LogoutRequest;
 import com.devinterview.api.auth.dto.RefreshRequest;
-import com.devinterview.api.auth.exception.AuthException;
 import com.devinterview.api.auth.service.AuthService;
+import com.devinterview.api.common.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,23 +22,20 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthTokenResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<ApiResponse<AuthTokenResponse>> login(@Valid @RequestBody LoginRequest request) {
+        AuthTokenResponse response = authService.login(request);
+        return ResponseEntity.ok(ApiResponse.success("Login successful.", response));
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthTokenResponse> refresh(@Valid @RequestBody RefreshRequest request) {
-        return ResponseEntity.ok(authService.refresh(request.refreshToken()));
+    public ResponseEntity<ApiResponse<AuthTokenResponse>> refresh(@Valid @RequestBody RefreshRequest request) {
+        AuthTokenResponse response = authService.refresh(request.refreshToken());
+        return ResponseEntity.ok(ApiResponse.success("Token refreshed.", response));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiMessageResponse> logout(@Valid @RequestBody LogoutRequest request) {
+    public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody LogoutRequest request) {
         authService.logout(request.refreshToken());
-        return ResponseEntity.ok(new ApiMessageResponse("Logged out successfully."));
-    }
-
-    @ExceptionHandler(AuthException.class)
-    public ResponseEntity<ApiMessageResponse> handleAuthException(AuthException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiMessageResponse(ex.getMessage()));
+        return ResponseEntity.ok(ApiResponse.success("Logged out successfully."));
     }
 }
