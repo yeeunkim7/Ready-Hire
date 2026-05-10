@@ -1,8 +1,9 @@
-package com.devinterview.api.domain.entity;
+package com.devinterview.api.domain.payment.entity;
 
 import com.devinterview.api.domain.common.BaseTimeEntity;
 import com.devinterview.api.domain.converter.SubscriptionPlanTypeConverter;
 import com.devinterview.api.domain.converter.SubscriptionStatusConverter;
+import com.devinterview.api.domain.entity.User;
 import com.devinterview.api.domain.enums.SubscriptionPlanType;
 import com.devinterview.api.domain.enums.SubscriptionStatus;
 import jakarta.persistence.Column;
@@ -23,6 +24,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Check;
 
+/**
+ * 사용자 PRO 구독(결제 기반) 정보를 저장하는 엔티티.
+ */
 @Getter
 @Setter
 @Builder
@@ -30,8 +34,8 @@ import org.hibernate.annotations.Check;
 @AllArgsConstructor
 @Entity
 @Table(name = "subscriptions")
-@Check(constraints = "status in ('ACTIVE','CANCELED','EXPIRED')")
-@Check(constraints = "plan_type in ('MONTHLY','YEARLY')")
+@Check(constraints = "status IN ('ACTIVE', 'CANCELLED', 'EXPIRED')")
+@Check(constraints = "plan_type IN ('PRO')")
 public class Subscription extends BaseTimeEntity {
 
     @Id
@@ -44,7 +48,8 @@ public class Subscription extends BaseTimeEntity {
 
     @Convert(converter = SubscriptionPlanTypeConverter.class)
     @Column(name = "plan_type", nullable = false, length = 20)
-    private SubscriptionPlanType planType;
+    @Builder.Default
+    private SubscriptionPlanType planType = SubscriptionPlanType.PRO;
 
     @Convert(converter = SubscriptionStatusConverter.class)
     @Column(name = "status", nullable = false, length = 20)
@@ -53,9 +58,6 @@ public class Subscription extends BaseTimeEntity {
     @Column(name = "started_at", nullable = false, columnDefinition = "timestamptz")
     private OffsetDateTime startedAt;
 
-    @Column(name = "ended_at", nullable = false, columnDefinition = "timestamptz")
-    private OffsetDateTime endedAt;
-
-    @Column(name = "canceled_at", columnDefinition = "timestamptz")
-    private OffsetDateTime canceledAt;
+    @Column(name = "expires_at", columnDefinition = "timestamptz")
+    private OffsetDateTime expiresAt;
 }

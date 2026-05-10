@@ -9,22 +9,22 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * AI ÀÀ´ä ÆÄ¼­ ¼ø¼ö ´ÜÀ§ Å×½ºÆ®.
+ * AI ì‘ë‹µ íŒŒì„œ ìˆœìˆ˜ ë‹¨ìœ„ í…ŒìŠ¤íŠ¸.
  */
 class AiResponseParserTest {
 
     private final AiResponseParser parser = new AiResponseParser(new ObjectMapper());
 
     @Test
-    @DisplayName("Áú¹® ÆÄ½Ì ½Ã Á¤»óÀûÀ¸·Î 5°³¸¦ ÃßÃâÇÑ´Ù")
-    void Áú¹®_ÆÄ½Ì_Á¤»ó_5°³_ÃßÃâ() {
+    @DisplayName("ì§ˆë¬¸ íŒŒì‹± ì‹œ ì •ìƒì ìœ¼ë¡œ 5ê°œë¥¼ ì¶”ì¶œí•œë‹¤")
+    void ì§ˆë¬¸_íŒŒì‹±_ì •ìƒ_5ê°œ_ì¶”ì¶œ() {
         // given
         String content = """
-            1. JavaÀÇ GC µ¿ÀÛ ¿ø¸®¸¦ ¼³¸íÇØÁÖ¼¼¿ä.
-            2. Spring BootÀÇ ÀÚµ¿ ¼³Á¤ ¿ø¸®´Â?
-            3. JPA N+1 ¹®Á¦¿Í ÇØ°á ¹æ¹ıÀº?
-            4. REST API ¼³°è ¿øÄ¢À» ¼³¸íÇØÁÖ¼¼¿ä.
-            5. ½º·¹µå ¾ÈÀü¼ºÀ» º¸ÀåÇÏ´Â ¹æ¹ıÀº?
+            1. Javaì˜ GC ë™ì‘ ì›ë¦¬ë¥¼ ì„¤ëª…í•´ì£¼ì„¸ìš”.
+            2. Spring Bootì˜ ìë™ ì„¤ì • ì›ë¦¬ëŠ”?
+            3. JPA N+1 ë¬¸ì œì™€ í•´ê²° ë°©ë²•ì€?
+            4. REST API ì„¤ê³„ ì›ì¹™ì„ ì„¤ëª…í•´ì£¼ì„¸ìš”.
+            5. ìŠ¤ë ˆë“œ ì•ˆì „ì„±ì„ ë³´ì¥í•˜ëŠ” ë°©ë²•ì€?
             """;
 
         // when
@@ -35,24 +35,24 @@ class AiResponseParserTest {
     }
 
     @Test
-    @DisplayName("Áú¹® ÆÄ½Ì ½Ã ¹øÈ£ ¸Å±èÀÌ Á¦°ÅµÈ´Ù")
-    void Áú¹®_ÆÄ½Ì_¹øÈ£¸Å±è_Á¦°Å_È®ÀÎ() {
+    @DisplayName("ì§ˆë¬¸ íŒŒì‹± ì‹œ ë²ˆí˜¸ ë§¤ê¹€ì´ ì œê±°ëœë‹¤")
+    void ì§ˆë¬¸_íŒŒì‹±_ë²ˆí˜¸ë§¤ê¹€_ì œê±°_í™•ì¸() {
         // given
-        String content = "1) Ã¹ Áú¹®\n2. µÎ¹øÂ° Áú¹®";
+        String content = "1) ì²« ì§ˆë¬¸\n2. ë‘ë²ˆì§¸ ì§ˆë¬¸";
 
         // when
         var result = parser.parseQuestions(content);
 
         // then
-        assertThat(result).containsExactly("Ã¹ Áú¹®", "µÎ¹øÂ° Áú¹®");
+        assertThat(result).containsExactly("ì²« ì§ˆë¬¸", "ë‘ë²ˆì§¸ ì§ˆë¬¸");
     }
 
     @Test
-    @DisplayName("ÇÇµå¹é JSON ÆÄ½ÌÀÌ ¼º°øÇÑ´Ù")
-    void ÇÇµå¹é_JSON_ÆÄ½Ì_¼º°ø() {
+    @DisplayName("í”¼ë“œë°± JSON íŒŒì‹±ì´ ì„±ê³µí•œë‹¤")
+    void í”¼ë“œë°±_JSON_íŒŒì‹±_ì„±ê³µ() {
         // given
         String content = """
-            {"score":85,"summaryFeedback":"ÁÁÀ½","detailedFeedback":{"strengths":["Á¤È®ÇÔ"]},"grade":"B"}
+            {"score":85,"summaryFeedback":"ì¢‹ìŒ","detailedFeedback":{"strengths":["ì •í™•í•¨"]},"grade":"B"}
             """;
 
         // when
@@ -64,8 +64,8 @@ class AiResponseParserTest {
     }
 
     @Test
-    @DisplayName("ÇÇµå¹é JSON ÇÊµå ´©¶ô ½Ã ±âº»°ª Ã³¸® °¡´ÉÇÏ´Ù")
-    void ÇÇµå¹é_JSON_ÇÊµå_´©¶ô_±âº»°ª_Ã³¸®() {
+    @DisplayName("í”¼ë“œë°± JSON í•„ë“œ ëˆ„ë½ ì‹œ ê¸°ë³¸ê°’ ì²˜ë¦¬ ê°€ëŠ¥í•˜ë‹¤")
+    void í”¼ë“œë°±_JSON_í•„ë“œ_ëˆ„ë½_ê¸°ë³¸ê°’_ì²˜ë¦¬() {
         // given
         String content = "{}";
 

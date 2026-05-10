@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * ¸éÁ¢ Áú¹® ÀúÀå¼Ò.
+ * ë©´ì ‘ ì§ˆë¬¸ ì €ìž¥ì†Œ.
  */
 public interface InterviewQuestionRepository extends JpaRepository<InterviewQuestion, Long> {
 

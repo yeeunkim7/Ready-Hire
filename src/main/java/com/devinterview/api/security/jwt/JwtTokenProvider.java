@@ -3,6 +3,7 @@ package com.devinterview.api.security.jwt;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
@@ -98,7 +99,7 @@ public class JwtTokenProvider {
             if (decoded.length > 0) {
                 return Keys.hmacShaKeyFor(decoded);
             }
-        } catch (IllegalArgumentException ignored) {
+        } catch (IllegalArgumentException | DecodingException ignored) {
             // fallback to plain secret bytes
         }
 

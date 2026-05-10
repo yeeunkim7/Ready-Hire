@@ -23,7 +23,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
 /**
- * OpenAI ¿À·ù ÀÀ´ä ¹× ³×Æ®¿öÅ© Àå¾Ö Å×½ºÆ®.
+ * OpenAI ì˜¤ë¥˜ ì‘ë‹µ ë° ë„¤íŠ¸ì›Œí¬ ìž¥ì•  í…ŒìŠ¤íŠ¸.
  */
 class OpenAiChatServiceErrorTest {
 
@@ -48,10 +48,10 @@ class OpenAiChatServiceErrorTest {
     }
 
     @Test
-    @DisplayName("OpenAI 500 ¿¡·¯ ½Ã AI_SERVICE_ERROR ¿¹¿Ü¸¦ ´øÁø´Ù")
-    void openAI_500¿¡·¯_AI_SERVICE_ERROR_¿¹¿Ü() {
+    @DisplayName("OpenAI 500 ì—ëŸ¬ ì‹œ AI_SERVICE_ERROR ì˜ˆì™¸ë¥¼ ë˜ì§„ë‹¤")
+    void openAI_500ì—ëŸ¬_AI_SERVICE_ERROR_ì˜ˆì™¸() {
         // given
-        mockWebServer.enqueue(new MockResponse().setResponseCode(500).setBody("internal-error"));
+        mockWebServer.enqueue(jsonResponse(500, "internal-error"));
 
         // when / then
         assertThatThrownBy(() -> openAiChatService.generateQuestions(command()))
@@ -60,10 +60,10 @@ class OpenAiChatServiceErrorTest {
     }
 
     @Test
-    @DisplayName("OpenAI 401 ¿¡·¯ ½Ã ÀÎÁõ ½ÇÆÐ ¿¹¿Ü¸¦ ´øÁø´Ù")
-    void openAI_401¿¡·¯_ÀÎÁõ½ÇÆÐ_¿¹¿Ü() {
+    @DisplayName("OpenAI 401 ì—ëŸ¬ ì‹œ ì¸ì¦ ì‹¤íŒ¨ ì˜ˆì™¸ë¥¼ ë˜ì§„ë‹¤")
+    void openAI_401ì—ëŸ¬_ì¸ì¦ì‹¤íŒ¨_ì˜ˆì™¸() {
         // given
-        mockWebServer.enqueue(new MockResponse().setResponseCode(401).setBody("unauthorized"));
+        mockWebServer.enqueue(jsonResponse(401, "unauthorized"));
 
         // when / then
         assertThatThrownBy(() -> openAiChatService.generateQuestions(command()))
@@ -72,8 +72,8 @@ class OpenAiChatServiceErrorTest {
     }
 
     @Test
-    @DisplayName("OpenAI Å¸ÀÓ¾Æ¿ô »óÈ²¿¡¼­ ¿¹¿Ü¸¦ ´øÁø´Ù")
-    void openAI_Å¸ÀÓ¾Æ¿ô_¿¹¿Ü() {
+    @DisplayName("OpenAI íƒ€ìž„ì•„ì›ƒ ìƒí™©ì—ì„œ ì˜ˆì™¸ë¥¼ ë˜ì§„ë‹¤")
+    void openAI_íƒ€ìž„ì•„ì›ƒ_ì˜ˆì™¸() {
         // given
         mockWebServer.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));
 
@@ -84,15 +84,22 @@ class OpenAiChatServiceErrorTest {
     }
 
     @Test
-    @DisplayName("OpenAI choices ¹è¿­ÀÌ ºñ¾î ÀÖÀ¸¸é ¿¹¿Ü¸¦ ´øÁø´Ù")
-    void openAI_ºó_choices_¹è¿­_¿¹¿Ü() {
+    @DisplayName("OpenAI choices ë°°ì—´ì´ ë¹„ì–´ ìžˆìœ¼ë©´ ì˜ˆì™¸ë¥¼ ë˜ì§„ë‹¤")
+    void openAI_ë¹ˆ_choices_ë°°ì—´_ì˜ˆì™¸() {
         // given
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody("{\"choices\":[]}"));
+        mockWebServer.enqueue(jsonResponse(200, "{\"choices\":[]}"));
 
         // when / then
         assertThatThrownBy(() -> openAiChatService.generateQuestions(command()))
             .isInstanceOf(CustomException.class)
             .hasMessageContaining("empty completion response");
+    }
+
+    private static MockResponse jsonResponse(int code, String body) {
+        return new MockResponse()
+            .setResponseCode(code)
+            .addHeader("Content-Type", "application/json;charset=UTF-8")
+            .setBody(body);
     }
 
     private QuestionGenerationCommand command() {

@@ -3,7 +3,7 @@ package com.devinterview.api.domain.interview.dto;
 import java.util.List;
 
 /**
- * ¸éÁ¢ ½ÃÀÛ ÀÀ´ä DTO.
+ * ë©´ì ‘ ì‹œì‘ ì‘ë‹µ DTO.
  */
 public record InterviewStartResponse(
     Long interviewId,

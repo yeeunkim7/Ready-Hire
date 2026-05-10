@@ -1,7 +1,7 @@
 package com.devinterview.api.auth.oauth2;
 
 /**
- * OAuth2 Á¦°øÀÚº° »ç¿ëÀÚ Á¤º¸ Ãß»óÈ­ ÀÎÅÍÆäÀÌ½º.
+ * OAuth2 ì œê³µìë³„ ì‚¬ìš©ì ì •ë³´ ì¶”ìƒí™” ì¸í„°í˜ì´ìŠ¤.
  */
 public interface OAuth2UserInfo {
 

@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * ¸éÁ¢ È÷½ºÅä¸® ¿ä¾à DTO.
+ * ë©´ì ‘ ížˆìŠ¤í† ë¦¬ ìš”ì•½ DTO.
  */
 @Getter
 @Builder

@@ -23,7 +23,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
 /**
- * OpenAiChatService ÁÖ¿ä ¼º°ø/ÆÄ½Ì Å×½ºÆ®.
+ * OpenAiChatService ì£¼ìš” ì„±ê³µ/íŒŒì‹± í…ŒìŠ¤íŠ¸.
  */
 class OpenAiChatServiceTest {
 
@@ -32,7 +32,7 @@ class OpenAiChatServiceTest {
           "model": "gpt-4o-mini",
           "choices": [{
             "message": {
-              "content": "1. JavaÀÇ GC µ¿ÀÛ ¿ø¸®¸¦ ¼³¸íÇØÁÖ¼¼¿ä.\\n2. Spring BootÀÇ ÀÚµ¿ ¼³Á¤ ¿ø¸®´Â?\\n3. JPA N+1 ¹®Á¦¿Í ÇØ°á ¹æ¹ıÀº?\\n4. REST API ¼³°è ¿øÄ¢À» ¼³¸íÇØÁÖ¼¼¿ä.\\n5. ½º·¹µå ¾ÈÀü¼ºÀ» º¸ÀåÇÏ´Â ¹æ¹ıÀº?"
+              "content": "1. Javaì˜ GC ë™ì‘ ì›ë¦¬ë¥¼ ì„¤ëª…í•´ì£¼ì„¸ìš”.\\n2. Spring Bootì˜ ìë™ ì„¤ì • ì›ë¦¬ëŠ”?\\n3. JPA N+1 ë¬¸ì œì™€ í•´ê²° ë°©ë²•ì€?\\n4. REST API ì„¤ê³„ ì›ì¹™ì„ ì„¤ëª…í•´ì£¼ì„¸ìš”.\\n5. ìŠ¤ë ˆë“œ ì•ˆì „ì„±ì„ ë³´ì¥í•˜ëŠ” ë°©ë²•ì€?"
             }
           }],
           "usage": {
@@ -47,7 +47,7 @@ class OpenAiChatServiceTest {
           "model": "gpt-4o-mini",
           "choices": [{
             "message": {
-              "content": "{\"score\": 85, \"strengths\": \"ÇÙ½É °³³äÀ» Á¤È®È÷ ÀÌÇØÇÏ°í ÀÖÀ½\", \"improvements\": \"½ÇÁ¦ »ç·Ê¸¦ Ãß°¡ÇÏ¸é ÁÁ°ÚÀ½\", \"modelAnswer\": \"GC´Â Young/Old ¿µ¿ªÀ¸·Î ³ª´µ¸ç...\"}"
+              "content": "{\\"score\\": 85, \\"summaryFeedback\\": \\"í•µì‹¬ ê°œë…ì„ ì •í™•íˆ ì´í•´í•˜ê³  ìˆìŒ\\", \\"detailedFeedback\\": {\\"strengths\\": [\\"í•µì‹¬ ê°œë…\\"], \\"improvements\\": [\\"ì‹¤ì œ ì‚¬ë¡€ ì¶”ê°€\\"], \\"nextStep\\": \\"ì˜ˆì‹œ í•™ìŠµ\\"}, \\"grade\\": \\"A\\"}"
             }
           }],
           "usage": {
@@ -80,11 +80,18 @@ class OpenAiChatServiceTest {
         mockWebServer.shutdown();
     }
 
+    private static MockResponse jsonResponse(String body) {
+        return new MockResponse()
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/json;charset=UTF-8")
+            .setBody(body);
+    }
+
     @Test
-    @DisplayName("generateQuestions ¼º°ø ½Ã Áú¹® 5°³¸¦ ¹İÈ¯ÇÑ´Ù")
-    void generateQuestions_¼º°ø_5°³_Áú¹®_¹İÈ¯() {
+    @DisplayName("generateQuestions ì„±ê³µ ì‹œ ì§ˆë¬¸ 5ê°œë¥¼ ë°˜í™˜í•œë‹¤")
+    void generateQuestions_ì„±ê³µ_5ê°œ_ì§ˆë¬¸_ë°˜í™˜() {
         // given
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody(QUESTIONS_RESPONSE));
+        mockWebServer.enqueue(jsonResponse(QUESTIONS_RESPONSE));
         QuestionGenerationCommand request = new QuestionGenerationCommand(
             1L,
             InterviewType.TECHNICAL,
@@ -100,15 +107,15 @@ class OpenAiChatServiceTest {
 
         // then
         assertThat(result.questions()).hasSize(5);
-        assertThat(result.questions().get(0)).isEqualTo("JavaÀÇ GC µ¿ÀÛ ¿ø¸®¸¦ ¼³¸íÇØÁÖ¼¼¿ä.");
+        assertThat(result.questions().get(0)).isEqualTo("Javaì˜ GC ë™ì‘ ì›ë¦¬ë¥¼ ì„¤ëª…í•´ì£¼ì„¸ìš”.");
         assertThat(result.model()).isEqualTo("gpt-4o-mini");
     }
 
     @Test
-    @DisplayName("generateQuestions ºó ÀÀ´äÀÏ ¶§ ¿¹¿Ü°¡ ¹ß»ıÇÑ´Ù")
-    void generateQuestions_ºó_ÀÀ´ä_¿¹¿Ü_¹ß»ı() {
+    @DisplayName("generateQuestions ë¹ˆ ì‘ë‹µì¼ ë•Œ ì˜ˆì™¸ê°€ ë°œìƒí•œë‹¤")
+    void generateQuestions_ë¹ˆ_ì‘ë‹µ_ì˜ˆì™¸_ë°œìƒ() {
         // given
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody("{" +
+        mockWebServer.enqueue(jsonResponse("{" +
             "\"choices\":[{\"message\":{\"content\":\"\"}}]}"));
         QuestionGenerationCommand request = new QuestionGenerationCommand(
             1L,
@@ -127,17 +134,17 @@ class OpenAiChatServiceTest {
     }
 
     @Test
-    @DisplayName("analyzeAnswer ¼º°ø ½Ã ÇÇµå¹éÀ» ¹İÈ¯ÇÑ´Ù")
-    void analyzeAnswer_¼º°ø_ÇÇµå¹é_¹İÈ¯() {
+    @DisplayName("analyzeAnswer ì„±ê³µ ì‹œ í”¼ë“œë°±ì„ ë°˜í™˜í•œë‹¤")
+    void analyzeAnswer_ì„±ê³µ_í”¼ë“œë°±_ë°˜í™˜() {
         // given
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody(ANALYZE_RESPONSE));
+        mockWebServer.enqueue(jsonResponse(ANALYZE_RESPONSE));
         AnswerAnalysisCommand request = new AnswerAnalysisCommand(
             1L,
             10L,
             20L,
-            "GC ¿ø¸®¸¦ ¼³¸íÇØÁÖ¼¼¿ä",
-            "GC´Â ¸Ş¸ğ¸®¸¦ ÀÚµ¿À¸·Î Á¤¸®ÇÕ´Ï´Ù.",
-            "Á¤È®¼º, ±íÀÌ, Àü´Ş·Â"
+            "GC ì›ë¦¬ë¥¼ ì„¤ëª…í•´ì£¼ì„¸ìš”",
+            "GCëŠ” ë©”ëª¨ë¦¬ë¥¼ ìë™ìœ¼ë¡œ ì •ë¦¬í•©ë‹ˆë‹¤.",
+            "ì •í™•ì„±, ê¹Šì´, ì „ë‹¬ë ¥"
         );
 
         // when
@@ -145,23 +152,23 @@ class OpenAiChatServiceTest {
 
         // then
         assertThat(result.score()).isEqualTo(85);
-        assertThat(result.summaryFeedback()).contains("ÇÙ½É °³³ä");
+        assertThat(result.summaryFeedback()).contains("í•µì‹¬ ê°œë…");
         assertThat(result.detailedFeedbackJson()).contains("improvements");
     }
 
     @Test
-    @DisplayName("analyzeAnswer ÆÄ½Ì ½ÇÆĞ ½Ã ¿¹¿Ü°¡ ¹ß»ıÇÑ´Ù")
-    void analyzeAnswer_ÆÄ½Ì_½ÇÆĞ_¿¹¿Ü_¹ß»ı() {
+    @DisplayName("analyzeAnswer íŒŒì‹± ì‹¤íŒ¨ ì‹œ ì˜ˆì™¸ê°€ ë°œìƒí•œë‹¤")
+    void analyzeAnswer_íŒŒì‹±_ì‹¤íŒ¨_ì˜ˆì™¸_ë°œìƒ() {
         // given
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody("{" +
+        mockWebServer.enqueue(jsonResponse("{" +
             "\"choices\":[{\"message\":{\"content\":\"not-json\"}}]}"));
         AnswerAnalysisCommand request = new AnswerAnalysisCommand(
             1L,
             10L,
             20L,
-            "GC ¿ø¸®¸¦ ¼³¸íÇØÁÖ¼¼¿ä",
-            "GC´Â ¸Ş¸ğ¸®¸¦ ÀÚµ¿À¸·Î Á¤¸®ÇÕ´Ï´Ù.",
-            "Á¤È®¼º, ±íÀÌ, Àü´Ş·Â"
+            "GC ì›ë¦¬ë¥¼ ì„¤ëª…í•´ì£¼ì„¸ìš”",
+            "GCëŠ” ë©”ëª¨ë¦¬ë¥¼ ìë™ìœ¼ë¡œ ì •ë¦¬í•©ë‹ˆë‹¤.",
+            "ì •í™•ì„±, ê¹Šì´, ì „ë‹¬ë ¥"
         );
 
         // when / then

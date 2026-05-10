@@ -14,7 +14,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 /**
- * OAuth2 »ç¿ëÀÚ Á¤º¸¸¦ ·ÎÄÃ User ¿£Æ¼Æ¼¿Í µ¿±âÈ­ÇÏ´Â ¼­ºñ½º.
+ * OAuth2 ì‚¬ìš©ì ì •ë³´ë¥¼ ë¡œì»¬ User ì—”í‹°í‹°ì™€ ë™ê¸°í™”í•˜ëŠ” ì„œë¹„ìŠ¤.
  */
 @Slf4j
 @Service

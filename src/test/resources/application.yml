@@ -1,0 +1,35 @@
+# 테스트 전용 설정: 로컬 PostgreSQL 없이 컨텍스트 기동용 H2 메모리 DB
+jwt:
+  secret: test-jwt-secret-must-be-at-least-thirty-two-characters
+
+app:
+  oauth2:
+    redirect-uri: http://localhost:3000/oauth2/callback
+  subscription:
+    price: 9900
+    duration-days: 30
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: integration-test-google-client-id
+            client-secret: integration-test-google-client-secret
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: false
+  sql:
+    init:
+      mode: never

@@ -6,7 +6,7 @@ import java.util.Map;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 /**
- * OAuth2 ÀÎÁõ principal°ú ±âÁ¸ CustomUserDetails¸¦ ÅëÇÕÇÑ ±¸ÇöÃ¼.
+ * OAuth2 ì¸ì¦ principalê³¼ ê¸°ì¡´ CustomUserDetailsë¥¼ í†µí•©í•œ êµ¬í˜„ì²´.
  */
 public class OAuth2UserPrincipal extends CustomUserDetails implements OAuth2User {
 

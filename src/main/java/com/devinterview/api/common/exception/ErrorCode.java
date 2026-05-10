@@ -18,7 +18,13 @@ public enum ErrorCode {
     ANSWER_ANALYSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "INTERVIEW_006", "답변 분석에 실패했습니다."),
     AI_SERVICE_ERROR(HttpStatus.BAD_GATEWAY, "AI_001", "AI service call failed."),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "COMMON_001", "Invalid request."),
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_999", "Unexpected server error.");
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_999", "Unexpected server error."),
+    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_001", "결제 정보를 찾을 수 없습니다."),
+    PAYMENT_NOT_PAID(HttpStatus.BAD_REQUEST, "PAYMENT_002", "완료되지 않은 결제입니다."),
+    PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "PAYMENT_003", "결제 금액이 일치하지 않습니다."),
+    PAYMENT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "PAYMENT_004", "이미 처리된 결제입니다."),
+    PAYMENT_PORTONE_API_ERROR(HttpStatus.BAD_GATEWAY, "PAYMENT_005", "포트원 API 호출에 실패했습니다."),
+    SUBSCRIPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_006", "활성 구독 정보를 찾을 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
