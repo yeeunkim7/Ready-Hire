@@ -1,10 +1,9 @@
-package com.devinterview.api.domain.entity;
+package com.devinterview.api.domain.payment.entity;
 
 import com.devinterview.api.domain.common.BaseTimeEntity;
 import com.devinterview.api.domain.converter.PaymentStatusConverter;
-import com.devinterview.api.domain.converter.PaymentTypeConverter;
+import com.devinterview.api.domain.entity.User;
 import com.devinterview.api.domain.enums.PaymentStatus;
-import com.devinterview.api.domain.enums.PaymentType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -16,7 +15,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,6 +23,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Check;
 
+/**
+ * 포트원 결제 건과 구독을 연결하는 결제 내역 엔티티.
+ */
 @Getter
 @Setter
 @Builder
@@ -34,11 +35,10 @@ import org.hibernate.annotations.Check;
 @Table(
     name = "payments",
     uniqueConstraints = {
-        @UniqueConstraint(name = "uk_payments_provider_payment_id", columnNames = {"provider_payment_id"})
+        @UniqueConstraint(name = "uk_payments_provider_payment_id", columnNames = {"portone_payment_id"})
     }
 )
-@Check(constraints = "payment_type in ('SUBSCRIPTION','REFUND')")
-@Check(constraints = "status in ('PENDING','SUCCESS','FAILED','CANCELED')")
+@Check(constraints = "status IN ('PAID', 'FAILED', 'CANCELLED')")
 public class Payment extends BaseTimeEntity {
 
     @Id
@@ -49,26 +49,23 @@ public class Payment extends BaseTimeEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "subscription_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subscription_id")
     private Subscription subscription;
 
-    @Convert(converter = PaymentTypeConverter.class)
-    @Column(name = "payment_type", nullable = false, length = 20)
-    private PaymentType paymentType;
+    @Column(name = "portone_payment_id", nullable = false, length = 255)
+    private String portonePaymentId;
 
-    @Column(name = "amount", nullable = false, precision = 12, scale = 2)
-    private BigDecimal amount;
+    @Column(name = "amount", nullable = false)
+    private Integer amount;
 
-    @Column(name = "currency", nullable = false, length = 3)
-    private String currency;
+    @Column(name = "currency", nullable = false, length = 10)
+    @Builder.Default
+    private String currency = "KRW";
 
     @Convert(converter = PaymentStatusConverter.class)
     @Column(name = "status", nullable = false, length = 20)
     private PaymentStatus status;
-
-    @Column(name = "provider_payment_id", length = 100)
-    private String providerPaymentId;
 
     @Column(name = "paid_at", columnDefinition = "timestamptz")
     private OffsetDateTime paidAt;

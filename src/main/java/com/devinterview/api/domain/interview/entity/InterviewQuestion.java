@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * ¸éÁ¢ ¼¼¼Çº° »ı¼º Áú¹® ¿£Æ¼Æ¼.
+ * ë©´ì ‘ ì„¸ì…˜ë³„ ìƒì„± ì§ˆë¬¸ ì—”í‹°í‹°.
  */
 @Getter
 @Setter

@@ -3,7 +3,7 @@ package com.devinterview.api.auth.oauth2;
 import java.util.Map;
 
 /**
- * Google OAuth2 »ç¿ëÀÚ Á¤º¸ ¸ÅÇÎ Å¬·¡½º.
+ * Google OAuth2 ì‚¬ìš©ì ì •ë³´ ë§¤í•‘ í´ë˜ìŠ¤.
  */
 public class GoogleOAuth2UserInfo implements OAuth2UserInfo {
 

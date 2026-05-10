@@ -11,7 +11,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationFa
 import org.springframework.stereotype.Component;
 
 /**
- * OAuth2 ·Î±×ÀÎ ½ÇÆĞ ½Ã ÇÁ·ĞÆ®¿£µå ¿¡·¯ ÆäÀÌÁö·Î ¸®´ÙÀÌ·ºÆ®ÇÏ´Â ÇÚµé·¯.
+ * OAuth2 ë¡œê·¸ì¸ ì‹¤íŒ¨ ì‹œ í”„ë¡ íŠ¸ì—”ë“œ ì—ëŸ¬ í˜ì´ì§€ë¡œ ë¦¬ë‹¤ì´ë ‰íŠ¸í•˜ëŠ” í•¸ë“¤ëŸ¬.
  */
 @Slf4j
 @Component

@@ -15,9 +15,9 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 
 /**
- * ChatService ½ºÇÁ¸µ ÅëÇÕ ·Îµù Å×½ºÆ®.
+ * ChatService ìŠ¤í”„ë§ í†µí•© ë¡œë”© í…ŒìŠ¤íŠ¸.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @TestPropertySource(properties = {
     "openai.api.key=test-api-key",
     "openai.model=gpt-4o-mini"
@@ -47,8 +47,8 @@ class ChatServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("Spring Context¿¡¼­ ChatService ºóÀÌ Á¤»ó ÁÖÀÔµÈ´Ù")
-    void spring_context_·Îµå_¹×_chatService_ºó_ÁÖÀÔ_È®ÀÎ() {
+    @DisplayName("Spring Contextì—ì„œ ChatService ë¹ˆì´ ì •ìƒ ì£¼ì…ëœë‹¤")
+    void spring_context_ë¡œë“œ_ë°_chatService_ë¹ˆ_ì£¼ì…_í™•ì¸() {
         // given / when / then
         assertThat(chatService).isNotNull();
         assertThat(chatService.getClass().getSimpleName()).isEqualTo("OpenAiChatService");

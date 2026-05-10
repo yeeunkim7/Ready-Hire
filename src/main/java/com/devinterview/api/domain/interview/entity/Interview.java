@@ -23,7 +23,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 /**
- * AI ¸éÁ¢ ¼¼¼Ç Á¤º¸¸¦ ÀúÀåÇÏ´Â ¿£Æ¼Æ¼.
+ * AI ë©´ì ‘ ì„¸ì…˜ ì •ë³´ë¥¼ ì €ìž¥í•˜ëŠ” ì—”í‹°í‹°.
  */
 @Getter
 @Setter

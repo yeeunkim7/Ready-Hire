@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * ¸éÁ¢ ½ÃÀÛ ¿äÃ» DTO.
+ * ë©´ì ‘ ì‹œì‘ ìš”ì²­ DTO.
  */
 @Getter
 @Setter

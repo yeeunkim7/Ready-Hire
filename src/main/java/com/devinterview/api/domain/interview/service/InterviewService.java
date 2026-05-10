@@ -45,7 +45,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * ¸éÁ¢ ¼¼¼Ç ½ÃÀÛ/Á¶È¸ ºñÁî´Ï½º¸¦ Ã³¸®ÇÏ´Â ¼­ºñ½º.
+ * ë©´ì ‘ ì„¸ì…˜ ì‹œì‘/ì¡°íšŒ ë¹„ì¦ˆë‹ˆìŠ¤ë¥¼ ì²˜ë¦¬í•˜ëŠ” ì„œë¹„ìŠ¤.
  */
 @Slf4j
 @Service
@@ -67,7 +67,7 @@ public class InterviewService {
     @Transactional
     public InterviewStartResponse startInterview(Long userId, InterviewStartRequest request) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new CustomException(ErrorCode.AUTH_ERROR, "»ç¿ëÀÚ¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù."));
+            .orElseThrow(() -> new CustomException(ErrorCode.AUTH_ERROR, "ì‚¬ìš©ìë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤."));
 
         LocalDate today = LocalDate.now();
         DailyUsage dailyUsage = null;
@@ -158,7 +158,7 @@ public class InterviewService {
     }
 
     /**
-     * ´äº¯ ÀúÀå ÈÄ AI ºĞ¼® °á°ú¸¦ »ı¼ºÇÑ´Ù.
+     * ë‹µë³€ ì €ì¥ í›„ AI ë¶„ì„ ê²°ê³¼ë¥¼ ìƒì„±í•œë‹¤.
      */
     @Transactional
     public AnswerSubmitResponse submitAnswer(Long userId, Long interviewId, AnswerSubmitRequest request) {
@@ -170,9 +170,9 @@ public class InterviewService {
         }
 
         InterviewQuestion question = interviewQuestionRepository.findById(request.getQuestionId())
-            .orElseThrow(() -> new CustomException(ErrorCode.INTERVIEW_NOT_FOUND, "Áú¹® Á¤º¸¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù."));
+            .orElseThrow(() -> new CustomException(ErrorCode.INTERVIEW_NOT_FOUND, "ì§ˆë¬¸ ì •ë³´ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤."));
         if (!question.getInterview().getId().equals(interviewId)) {
-            throw new CustomException(ErrorCode.INTERVIEW_NOT_FOUND, "¸éÁ¢¿¡ ¼ÓÇÏÁö ¾Ê´Â Áú¹®ÀÔ´Ï´Ù.");
+            throw new CustomException(ErrorCode.INTERVIEW_NOT_FOUND, "ë©´ì ‘ì— ì†í•˜ì§€ ì•ŠëŠ” ì§ˆë¬¸ì…ë‹ˆë‹¤.");
         }
 
         InterviewAnswer answer = interviewAnswerRepository.save(
@@ -230,7 +230,7 @@ public class InterviewService {
     }
 
     /**
-     * ¸éÁ¢ »óÅÂ¸¦ ¿Ï·á·Î ÀüÈ¯ÇÏ°í °á°ú¸¦ ¹İÈ¯ÇÑ´Ù.
+     * ë©´ì ‘ ìƒíƒœë¥¼ ì™„ë£Œë¡œ ì „í™˜í•˜ê³  ê²°ê³¼ë¥¼ ë°˜í™˜í•œë‹¤.
      */
     @Transactional
     public InterviewCompleteResponse completeInterview(Long userId, Long interviewId) {
@@ -241,7 +241,7 @@ public class InterviewService {
     }
 
     /**
-     * ¸éÁ¢ »ó¼¼ °á°ú¸¦ Á¶È¸ÇÑ´Ù.
+     * ë©´ì ‘ ìƒì„¸ ê²°ê³¼ë¥¼ ì¡°íšŒí•œë‹¤.
      */
     @Transactional(readOnly = true)
     public InterviewCompleteResponse getInterviewDetail(Long userId, Long interviewId) {
@@ -265,7 +265,7 @@ public class InterviewService {
 
     private User getUserOrThrow(Long userId) {
         return userRepository.findById(userId)
-            .orElseThrow(() -> new CustomException(ErrorCode.AUTH_ERROR, "»ç¿ëÀÚ¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù."));
+            .orElseThrow(() -> new CustomException(ErrorCode.AUTH_ERROR, "ì‚¬ìš©ìë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤."));
     }
 
     private Interview getOwnedInterviewOrThrow(Long userId, Long interviewId) {
@@ -321,7 +321,7 @@ public class InterviewService {
         try {
             return objectMapper.writeValueAsString(payload);
         } catch (JsonProcessingException ex) {
-            throw new CustomException(ErrorCode.ANSWER_ANALYSIS_FAILED, "ÇÇµå¹é ÀúÀå Çü½Ä º¯È¯¿¡ ½ÇÆĞÇß½À´Ï´Ù.");
+            throw new CustomException(ErrorCode.ANSWER_ANALYSIS_FAILED, "í”¼ë“œë°± ì €ì¥ í˜•ì‹ ë³€í™˜ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.");
         }
     }
 

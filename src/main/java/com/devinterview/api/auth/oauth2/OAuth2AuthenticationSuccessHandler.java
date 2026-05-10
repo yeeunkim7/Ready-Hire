@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
- * OAuth2 ·Î±×ÀÎ ¼º°ø ½Ã JWT¸¦ ¹ß±ŞÇÏ°í ÇÁ·ĞÆ®¿£µå·Î ¸®´ÙÀÌ·ºÆ®ÇÏ´Â ÇÚµé·¯.
+ * OAuth2 ë¡œê·¸ì¸ ì„±ê³µ ì‹œ JWTë¥¼ ë°œê¸‰í•˜ê³  í”„ë¡ íŠ¸ì—”ë“œë¡œ ë¦¬ë‹¤ì´ë ‰íŠ¸í•˜ëŠ” í•¸ë“¤ëŸ¬.
  */
 @Slf4j
 @Component

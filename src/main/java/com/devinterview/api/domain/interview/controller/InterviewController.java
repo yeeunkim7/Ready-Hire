@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * ¸éÁ¢ ¼¼¼Ç ½ÃÀÛ ¹× È÷½ºÅä¸® API ÄÁÆ®·Ñ·¯.
+ * ë©´ì ‘ ì„¸ì…˜ ì‹œì‘ ë° íˆìŠ¤í† ë¦¬ API ì»¨íŠ¸ë¡¤ëŸ¬.
  */
 @RestController
 @RequestMapping("/api/interviews")
@@ -39,7 +39,7 @@ public class InterviewController {
     ) {
         InterviewStartResponse response = interviewService.startInterview(userDetails.getUserId(), request);
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponse.success("¸éÁ¢ ¼¼¼ÇÀÌ ½ÃÀÛµÇ¾ú½À´Ï´Ù.", response));
+            .body(ApiResponse.success("ë©´ì ‘ ì„¸ì…˜ì´ ì‹œì‘ë˜ì—ˆìŠµë‹ˆë‹¤.", response));
     }
 
     @GetMapping
@@ -47,7 +47,7 @@ public class InterviewController {
         @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         List<InterviewSummaryDto> history = interviewService.getHistory(userDetails.getUserId());
-        return ResponseEntity.ok(ApiResponse.success("¸éÁ¢ È÷½ºÅä¸® Á¶È¸ ¼º°ø", history));
+        return ResponseEntity.ok(ApiResponse.success("ë©´ì ‘ íˆìŠ¤í† ë¦¬ ì¡°íšŒ ì„±ê³µ", history));
     }
 
     @PostMapping("/{interviewId}/answers")
@@ -58,7 +58,7 @@ public class InterviewController {
     ) {
         AnswerSubmitResponse response = interviewService.submitAnswer(userDetails.getUserId(), interviewId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponse.success("´äº¯ÀÌ Á¦ÃâµÇ°í ÇÇµå¹éÀÌ »ı¼ºµÇ¾ú½À´Ï´Ù.", response));
+            .body(ApiResponse.success("ë‹µë³€ì´ ì œì¶œë˜ê³  í”¼ë“œë°±ì´ ìƒì„±ë˜ì—ˆìŠµë‹ˆë‹¤.", response));
     }
 
     @PostMapping("/{interviewId}/complete")
@@ -67,7 +67,7 @@ public class InterviewController {
         @PathVariable Long interviewId
     ) {
         InterviewCompleteResponse response = interviewService.completeInterview(userDetails.getUserId(), interviewId);
-        return ResponseEntity.ok(ApiResponse.success("¸éÁ¢ÀÌ Á¾·áµÇ¾ú½À´Ï´Ù.", response));
+        return ResponseEntity.ok(ApiResponse.success("ë©´ì ‘ì´ ì¢…ë£Œë˜ì—ˆìŠµë‹ˆë‹¤.", response));
     }
 
     @GetMapping("/{interviewId}")
@@ -76,6 +76,6 @@ public class InterviewController {
         @PathVariable Long interviewId
     ) {
         InterviewCompleteResponse response = interviewService.getInterviewDetail(userDetails.getUserId(), interviewId);
-        return ResponseEntity.ok(ApiResponse.success("¸éÁ¢ »ó¼¼ Á¶È¸ ¼º°ø", response));
+        return ResponseEntity.ok(ApiResponse.success("ë©´ì ‘ ìƒì„¸ ì¡°íšŒ ì„±ê³µ", response));
     }
 }
