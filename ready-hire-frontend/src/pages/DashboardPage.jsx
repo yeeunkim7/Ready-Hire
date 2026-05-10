@@ -1,0 +1,96 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { getInterviewHistory } from '../api/interview.js'
+import Navbar from '../components/Navbar.jsx'
+import PlanBadge from '../components/PlanBadge.jsx'
+import { useAuth } from '../contexts/AuthContext.jsx'
+
+/**
+ * 사용자 요약 정보와 최근 면접 기록을 보여주는 대시보드입니다.
+ */
+function DashboardPage() {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const [history, setHistory] = useState([])
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        setLoading(true)
+        const response = await getInterviewHistory()
+        const items = response.data?.items ?? response.data ?? []
+        setHistory(Array.isArray(items) ? items : [])
+      } catch (error) {
+        console.error('Failed to load interview history:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchHistory()
+  }, [])
+
+  const remainingFreeCount = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10)
+    const todaysCount = history.filter((item) => (item.createdAt ?? '').slice(0, 10) === today).length
+    return Math.max(0, 3 - todaysCount)
+  }, [history])
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
+        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm text-gray-500">로그인 계정</p>
+              <p className="text-lg font-semibold">{user?.email}</p>
+            </div>
+            <PlanBadge planType={user?.planType} />
+          </div>
+          {String(user?.planType ?? 'FREE').toUpperCase() !== 'PRO' && (
+            <p className="mt-4 rounded-xl bg-gray-50 p-3 text-sm text-gray-600">오늘 남은 횟수 {remainingFreeCount}/3회</p>
+          )}
+          <button
+            type="button"
+            onClick={() => navigate('/interview/setup')}
+            className="mt-4 rounded-xl bg-primary px-6 py-3 font-medium text-white"
+          >
+            새 면접 시작
+          </button>
+        </section>
+
+        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold">최근 면접 히스토리</h2>
+          {loading ? (
+            <p className="mt-4 text-sm text-gray-500">불러오는 중...</p>
+          ) : history.length === 0 ? (
+            <p className="mt-4 text-sm text-gray-500">아직 면접 기록이 없습니다.</p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {history.slice(0, 5).map((item) => (
+                <li key={item.id} className="rounded-xl border border-gray-100 p-4">
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between text-left"
+                    onClick={() => navigate(`/interview/${item.id}/result`)}
+                  >
+                    <div>
+                      <p className="font-medium">{item.jobRole ?? item.position ?? '직무 미지정'}</p>
+                      <p className="text-sm text-gray-500">
+                        {item.createdAt ? new Date(item.createdAt).toLocaleString() : '날짜 정보 없음'}
+                      </p>
+                    </div>
+                    <span className="text-sm text-gray-600">{item.status ?? 'COMPLETED'}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </main>
+    </div>
+  )
+}
+
+export default DashboardPage
