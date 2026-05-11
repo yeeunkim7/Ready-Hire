@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { useToast } from '../contexts/ToastContext.jsx'
 
 /**
  * Google OAuth2 로그인을 시작하는 진입 페이지입니다.
@@ -9,6 +10,7 @@ function LoginPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const { isLoggedIn } = useAuth()
+  const { showToast } = useToast()
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -18,6 +20,13 @@ function LoginPage() {
 
   const error = new URLSearchParams(location.search).get('error')
 
+  useEffect(() => {
+    if (error === 'oauth2_failed') {
+      showToast('로그인에 실패했습니다. 다시 시도해 주세요.', 'error')
+      navigate('/login', { replace: true })
+    }
+  }, [error, navigate, showToast])
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <section className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
@@ -25,8 +34,6 @@ function LoginPage() {
           <p className="text-sm font-medium text-primary">AI MOCK INTERVIEW</p>
           <h1 className="mt-2 text-3xl font-bold text-gray-900">Ready-Hire</h1>
         </div>
-
-        {error && <p className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-600">로그인에 실패했습니다. 다시 시도해 주세요.</p>}
 
         <button
           type="button"

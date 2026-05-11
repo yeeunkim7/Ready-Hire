@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { useToast } from '../contexts/ToastContext.jsx'
 
 /**
  * OAuth2 콜백에서 토큰을 저장하고 대시보드로 이동합니다.
@@ -9,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 function OAuth2CallbackPage() {
   const navigate = useNavigate()
   const { login } = useAuth()
+  const { showToast } = useToast()
 
   useEffect(() => {
     try {
@@ -23,11 +25,11 @@ function OAuth2CallbackPage() {
 
       login(accessToken, refreshToken)
       navigate('/dashboard', { replace: true })
-    } catch (error) {
-      console.error('OAuth2 callback handling failed:', error)
+    } catch {
+      showToast('로그인 처리 중 오류가 발생했습니다.', 'error')
       navigate('/login?error=oauth2_failed', { replace: true })
     }
-  }, [login, navigate])
+  }, [login, navigate, showToast])
 
   return <LoadingSpinner fullScreen message="로그인 처리 중..." />
 }

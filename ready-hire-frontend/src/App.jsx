@@ -6,6 +6,7 @@ import InterviewResultPage from './pages/InterviewResultPage.jsx'
 import InterviewSetupPage from './pages/InterviewSetupPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import OAuth2CallbackPage from './pages/OAuth2CallbackPage.jsx'
+import SubscriptionPage from './pages/SubscriptionPage.jsx'
 
 function App() {
   return (
@@ -42,6 +43,14 @@ function App() {
         element={
           <PrivateRoute>
             <InterviewResultPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/subscription"
+        element={
+          <PrivateRoute>
+            <SubscriptionPage />
           </PrivateRoute>
         }
       />

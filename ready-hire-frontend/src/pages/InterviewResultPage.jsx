@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { getInterviewDetail } from '../api/interview.js'
 import Navbar from '../components/Navbar.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { getScoreColorClass } from '../utils/score.js'
 
 /**
  * 완료된 면접의 종합 결과와 질문별 피드백을 보여줍니다.
@@ -18,10 +19,10 @@ function InterviewResultPage() {
     const fetchResult = async () => {
       try {
         setLoading(true)
-        const response = await getInterviewDetail(id)
-        setResult(response.data)
-      } catch (error) {
-        console.error('Failed to fetch interview result:', error)
+        const data = await getInterviewDetail(id)
+        setResult(data)
+      } catch {
+        /* axios / unwrap */
       } finally {
         setLoading(false)
       }
@@ -29,12 +30,8 @@ function InterviewResultPage() {
     fetchResult()
   }, [id])
 
-  const questionResults = useMemo(() => result?.questionResults ?? result?.questions ?? [], [result])
-  const averageScore =
-    result?.averageScore ??
-    (questionResults.length
-      ? Math.round(questionResults.reduce((sum, item) => sum + Number(item.score ?? 0), 0) / questionResults.length)
-      : 0)
+  const questionResults = useMemo(() => result?.results ?? [], [result])
+  const totalScore = result?.totalScore ?? 0
 
   if (loading) {
     return (
@@ -55,26 +52,38 @@ function InterviewResultPage() {
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
         <section className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm">
           <p className="text-sm text-gray-500">전체 평균 점수</p>
-          <p className="mt-2 text-5xl font-bold text-primary">{averageScore}</p>
+          <p className={`mt-2 text-5xl font-bold ${getScoreColorClass(totalScore)}`}>{totalScore}</p>
         </section>
 
         <section className="space-y-4">
+          {questionResults.length === 0 && (
+            <p className="rounded-2xl border border-gray-100 bg-white p-6 text-center text-sm text-gray-500 shadow-sm">
+              질문별 결과가 없습니다.
+            </p>
+          )}
           {questionResults.map((item, index) => (
-            <article key={item.id ?? index} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <article key={item.questionId ?? index} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
               <p className="text-sm text-gray-500">질문 {index + 1}</p>
-              <p className="mt-1 font-medium">{item.question ?? item.questionContent ?? '질문 정보 없음'}</p>
-              <p className="mt-3 text-primary">점수: {item.score ?? 0}</p>
+              <p className="mt-1 font-medium">{item.questionContent ?? '질문 정보 없음'}</p>
+              <p className={`mt-3 text-lg font-semibold ${getScoreColorClass(item.score)}`}>점수: {item.score ?? 0}</p>
               {isPro ? (
                 <div className="mt-4 space-y-2 rounded-xl bg-gray-50 p-3 text-sm text-gray-700">
-                  <p>잘한점: {item.strengths ?? item.feedback?.strengths ?? '-'}</p>
-                  <p>개선점: {item.improvements ?? item.feedback?.improvements ?? '-'}</p>
-                  <p>모범답안: {item.modelAnswer ?? item.feedback?.modelAnswer ?? '-'}</p>
+                  <p>잘한점: {item.strengths ?? '-'}</p>
+                  <p>개선점: {item.improvements ?? '-'}</p>
+                  <p>모범답안: {item.modelAnswer ?? '-'}</p>
                 </div>
               ) : (
-                <div className="mt-4 rounded-xl bg-purple-50 p-3 text-sm text-purple-700">
-                  <p>PRO 플랜에서 상세 피드백을 확인하세요.</p>
-                  <button type="button" className="mt-2 rounded-lg bg-secondary px-3 py-2 text-white">
-                    업그레이드
+                <div className="mt-4 rounded-xl border border-purple-100 bg-purple-50 p-4 text-sm text-purple-900">
+                  <p className="font-semibold">🔒 PRO 플랜에서 확인 가능</p>
+                  <ul className="mt-2 list-inside list-disc space-y-1 text-purple-800">
+                    <li>잘한점 / 개선점 / 모범답안</li>
+                  </ul>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/subscription')}
+                    className="mt-3 w-full rounded-xl bg-secondary px-4 py-2 font-medium text-white sm:w-auto"
+                  >
+                    PRO 업그레이드 →
                   </button>
                 </div>
               )}
@@ -82,7 +91,7 @@ function InterviewResultPage() {
           ))}
         </section>
 
-        <section className="flex gap-3">
+        <section className="flex flex-wrap gap-3">
           <button type="button" onClick={() => navigate('/interview/setup')} className="rounded-xl bg-primary px-6 py-3 font-medium text-white">
             다시 면접하기
           </button>
