@@ -2,3 +2,6 @@
 build/
 bin/
 out/
+.env
+*.env
+.env.local
