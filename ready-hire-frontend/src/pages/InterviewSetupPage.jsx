@@ -25,18 +25,19 @@ function InterviewSetupPage() {
       setLoading(true)
       const payload = {
         jobRole,
-        techStacks,
-        careerLevel,
+        techStack: techStacks,
+        experienceLevel: careerLevel,
       }
-      const response = await startInterview(payload)
-      const interviewId = response.data?.id ?? response.data?.interviewId
+      const data = await startInterview(payload)
+      const interviewId = data?.interviewId
       if (!interviewId) {
         throw new Error('Interview id missing in response')
       }
-      navigate(`/interview/${interviewId}`, { state: { interview: response.data } })
-    } catch (error) {
-      console.error('Failed to start interview:', error)
-      alert('면접 시작에 실패했습니다. 잠시 후 다시 시도해 주세요.')
+      const questions = data?.questions ?? []
+      sessionStorage.setItem(`interview_questions_${interviewId}`, JSON.stringify(questions))
+      navigate(`/interview/${interviewId}`, { state: { questions } })
+    } catch {
+      /* axios / unwrap 토스트 */
     } finally {
       setLoading(false)
     }

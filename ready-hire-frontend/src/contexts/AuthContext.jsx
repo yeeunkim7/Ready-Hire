@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types'
-import { createContext, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import { logout as logoutApi } from '../api/auth.js'
 import { clearTokens, getStoredUser, setStoredUser, setTokens } from '../utils/token.js'
+import { notifyToast } from '../utils/toastNotify.js'
 
 const AuthContext = createContext(null)
 
@@ -16,8 +17,8 @@ const parseJwtPayload = (token) => {
         .join(''),
     )
     return JSON.parse(decoded)
-  } catch (error) {
-    console.error('Failed to parse JWT payload:', error)
+  } catch {
+    notifyToast('로그인 정보를 처리하지 못했습니다.', 'error')
     return null
   }
 }
@@ -27,6 +28,15 @@ const parseJwtPayload = (token) => {
  */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => getStoredUser())
+
+  const updateUser = useCallback((partial) => {
+    setUser((prev) => {
+      const base = prev ?? { email: '', planType: 'FREE' }
+      const next = { ...base, ...partial }
+      setStoredUser(next)
+      return next
+    })
+  }, [])
 
   const login = (accessToken, refreshToken) => {
     setTokens(accessToken, refreshToken)
@@ -45,8 +55,8 @@ export function AuthProvider({ children }) {
       if (refreshToken) {
         await logoutApi(refreshToken)
       }
-    } catch (error) {
-      console.error('Logout API failed:', error)
+    } catch {
+      /* axios 인터셉터에서 이미 토스트 처리 */
     } finally {
       clearTokens()
       setUser(null)
@@ -59,8 +69,9 @@ export function AuthProvider({ children }) {
       isLoggedIn: Boolean(user),
       login,
       logout,
+      updateUser,
     }),
-    [user],
+    [user, updateUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
