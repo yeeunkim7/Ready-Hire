@@ -11,8 +11,7 @@ export const getStoredUser = () => {
   if (!raw) return null
   try {
     return JSON.parse(raw)
-  } catch (error) {
-    console.error('Failed to parse stored user:', error)
+  } catch {
     return null
   }
 }

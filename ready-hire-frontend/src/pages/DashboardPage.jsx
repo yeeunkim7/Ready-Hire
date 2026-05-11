@@ -18,11 +18,10 @@ function DashboardPage() {
     const fetchHistory = async () => {
       try {
         setLoading(true)
-        const response = await getInterviewHistory()
-        const items = response.data?.items ?? response.data ?? []
+        const items = await getInterviewHistory()
         setHistory(Array.isArray(items) ? items : [])
-      } catch (error) {
-        console.error('Failed to load interview history:', error)
+      } catch {
+        /* 토스트는 axios / unwrap */
       } finally {
         setLoading(false)
       }
@@ -36,9 +35,19 @@ function DashboardPage() {
     return Math.max(0, 3 - todaysCount)
   }, [history])
 
+  const isFree = String(user?.planType ?? 'FREE').toUpperCase() !== 'PRO'
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
+      {isFree && (
+        <div className="sticky top-0 z-40 border-b border-amber-200 bg-amber-100 px-4 py-3 text-center text-sm text-amber-900">
+          <button type="button" className="font-semibold underline" onClick={() => navigate('/subscription')}>
+            PRO로 업그레이드
+          </button>
+          <span className="hidden sm:inline"> — 무제한 면접과 상세 AI 피드백을 이용해 보세요.</span>
+        </div>
+      )}
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
         <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -69,11 +78,11 @@ function DashboardPage() {
           ) : (
             <ul className="mt-4 space-y-3">
               {history.slice(0, 5).map((item) => (
-                <li key={item.id} className="rounded-xl border border-gray-100 p-4">
+                <li key={item.interviewId ?? item.id} className="rounded-xl border border-gray-100 p-4">
                   <button
                     type="button"
                     className="flex w-full items-center justify-between text-left"
-                    onClick={() => navigate(`/interview/${item.id}/result`)}
+                    onClick={() => navigate(`/interview/${item.interviewId ?? item.id}/result`)}
                   >
                     <div>
                       <p className="font-medium">{item.jobRole ?? item.position ?? '직무 미지정'}</p>

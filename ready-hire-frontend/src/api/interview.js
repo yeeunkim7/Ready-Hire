@@ -1,12 +1,27 @@
 import axios from './axios.js'
+import { unwrapApiData } from '../utils/unwrapApi.js'
 
-export const startInterview = (data) => axios.post('/api/interviews', data)
+export const startInterview = async (data) => {
+  const res = await axios.post('/api/interviews', data)
+  return unwrapApiData(res)
+}
 
-export const submitAnswer = (interviewId, data) =>
-  axios.post(`/api/interviews/${interviewId}/answers`, data)
+export const submitAnswer = async (interviewId, data) => {
+  const res = await axios.post(`/api/interviews/${interviewId}/answers`, data)
+  return unwrapApiData(res)
+}
 
-export const completeInterview = (interviewId) => axios.post(`/api/interviews/${interviewId}/complete`)
+export const completeInterview = async (interviewId) => {
+  const res = await axios.post(`/api/interviews/${interviewId}/complete`)
+  return unwrapApiData(res)
+}
 
-export const getInterviewDetail = (interviewId) => axios.get(`/api/interviews/${interviewId}`)
+export const getInterviewDetail = async (interviewId) => {
+  const res = await axios.get(`/api/interviews/${interviewId}`)
+  return unwrapApiData(res)
+}
 
-export const getInterviewHistory = () => axios.get('/api/interviews')
+export const getInterviewHistory = async () => {
+  const res = await axios.get('/api/interviews')
+  return unwrapApiData(res)
+}
