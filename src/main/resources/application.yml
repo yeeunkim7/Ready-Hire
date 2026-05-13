@@ -7,6 +7,12 @@ spring:
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-init-sql: "SELECT 1"
+      data-source-properties:
+        # TLS는 DB_URL의 sslmode=require만 사용 (ssl 속성과 동시 사용 시 08P01)
+        prepareThreshold: 0
+        preferQueryMode: simple
 
   jpa:
     hibernate:
@@ -20,9 +26,7 @@ spring:
           time_zone: UTC
 
   flyway:
-    enabled: true
-    baseline-on-migrate: true
-    locations: classpath:db/migration
+    enabled: false
 
   webflux:
     base-path: /
@@ -31,8 +35,8 @@ spring:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID:}
-            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            client-id: ${GOOGLE_CLIENT_ID:local-dev-google-client-id-placeholder}
+            client-secret: ${GOOGLE_CLIENT_SECRET:local-dev-google-client-secret-placeholder}
             scope:
               - email
               - profile
