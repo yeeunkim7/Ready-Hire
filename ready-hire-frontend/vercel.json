@@ -1,8 +1,5 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
-  "env": {
-    "VITE_API_BASE_URL": "@vite_api_base_url",
-    "VITE_PORTONE_CHANNEL_KEY": "@vite_portone_channel_key",
-    "VITE_OAUTH2_REDIRECT_URI": "@vite_oauth2_redirect_uri"
-  }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
