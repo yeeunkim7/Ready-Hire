@@ -48,6 +48,10 @@ public class DailyUsage extends BaseTimeEntity {
     private LocalDate usageDate;
 
     @Builder.Default
-    @Column(name = "usage_count", nullable = false)
+    @Column(name = "question_count", nullable = false)
     private Integer usageCount = 0;
+
+    @Builder.Default
+    @Column(name = "token_count", nullable = false)
+    private Integer tokenCount = 0;
 }
