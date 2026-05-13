@@ -1,0 +1,6 @@
+.gradle
+build
+.env
+*.env
+ready-hire-frontend/node_modules
+ready-hire-frontend/.next
