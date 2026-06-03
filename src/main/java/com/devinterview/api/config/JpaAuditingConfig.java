@@ -1,7 +1,6 @@
 package com.devinterview.api.config;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
 import java.util.Optional;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +24,6 @@ public class JpaAuditingConfig {
 
     @Bean
     public DateTimeProvider dateTimeProvider() {
-        return () -> Optional.of(OffsetDateTime.now(ZoneOffset.UTC));
+        return () -> Optional.of(Instant.now());
     }
 }
