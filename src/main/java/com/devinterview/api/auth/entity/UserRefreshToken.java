@@ -12,7 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -46,7 +46,7 @@ public class UserRefreshToken extends BaseTimeEntity {
     private String refreshToken;
 
     @Column(name = "expires_at", nullable = false, columnDefinition = "timestamptz")
-    private OffsetDateTime expiresAt;
+    private LocalDateTime expiresAt;
 
     @Column(name = "revoked", nullable = false)
     @Builder.Default

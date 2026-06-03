@@ -15,7 +15,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -68,5 +68,5 @@ public class Payment extends BaseTimeEntity {
     private PaymentStatus status;
 
     @Column(name = "paid_at", columnDefinition = "timestamptz")
-    private OffsetDateTime paidAt;
+    private LocalDateTime paidAt;
 }

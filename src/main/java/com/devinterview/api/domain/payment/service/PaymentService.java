@@ -19,7 +19,6 @@ import com.devinterview.api.domain.payment.repository.SubscriptionRepository;
 import com.devinterview.api.domain.repository.UserRepository;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -79,8 +78,8 @@ public class PaymentService {
 
         expireActiveSubscriptions(userId);
 
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        OffsetDateTime expires = now.plusDays(subscriptionDurationDays);
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime expires = now.plusDays(subscriptionDurationDays);
 
         Subscription subscription = subscriptionRepository.save(
             Subscription.builder()
@@ -92,7 +91,7 @@ public class PaymentService {
                 .build()
         );
 
-        OffsetDateTime paidAt = parsePaidAt(remote.getPaidAt(), now);
+        LocalDateTime paidAt = parsePaidAt(remote.getPaidAt(), now);
 
         Payment payment = paymentRepository.save(
             Payment.builder()
@@ -117,8 +116,8 @@ public class PaymentService {
             .amount(remote.getAmount())
             .status(PaymentStatus.PAID.name())
             .planType(PlanType.PRO.name())
-            .paidAt(toLocalDateTimeUtc(paidAt))
-            .subscriptionExpiresAt(toLocalDateTimeUtc(expires))
+            .paidAt(paidAt)
+            .subscriptionExpiresAt(expires)
             .build();
     }
 
@@ -135,15 +134,15 @@ public class PaymentService {
                 .portonePaymentId(p.getPortonePaymentId())
                 .amount(p.getAmount())
                 .status(p.getStatus().name())
-                .paidAt(toLocalDateTimeUtc(p.getPaidAt()))
+                .paidAt(p.getPaidAt())
                 .build())
             .collect(Collectors.toList());
 
         return SubscriptionStatusResponse.builder()
             .planType(user.getPlanType().name())
             .subscriptionStatus(active == null ? null : active.getStatus().name())
-            .startedAt(active == null ? null : toLocalDateTimeUtc(active.getStartedAt()))
-            .expiresAt(active == null ? null : toLocalDateTimeUtc(active.getExpiresAt()))
+            .startedAt(active == null ? null : active.getStartedAt())
+            .expiresAt(active == null ? null : active.getExpiresAt())
             .recentPayments(history)
             .build();
     }
@@ -195,7 +194,7 @@ public class PaymentService {
         }
     }
 
-    private OffsetDateTime parsePaidAt(String raw, OffsetDateTime fallback) {
+    private LocalDateTime parsePaidAt(String raw, LocalDateTime fallback) {
         if (raw == null || raw.isBlank()) {
             return fallback;
         }
@@ -203,18 +202,14 @@ public class PaymentService {
             if (raw.chars().allMatch(Character::isDigit)) {
                 long epoch = Long.parseLong(raw);
                 if (epoch > 1_000_000_000_000L) {
-                    return OffsetDateTime.ofInstant(Instant.ofEpochMilli(epoch), ZoneOffset.UTC);
+                    return LocalDateTime.ofInstant(Instant.ofEpochMilli(epoch), ZoneOffset.UTC);
                 }
-                return OffsetDateTime.ofInstant(Instant.ofEpochSecond(epoch), ZoneOffset.UTC);
+                return LocalDateTime.ofInstant(Instant.ofEpochSecond(epoch), ZoneOffset.UTC);
             }
-            return OffsetDateTime.parse(raw);
+            return LocalDateTime.ofInstant(Instant.parse(raw), ZoneOffset.UTC);
         } catch (Exception ex) {
             log.warn("[Payment] Could not parse paidAt={}, using fallback", raw);
             return fallback;
         }
-    }
-
-    private static LocalDateTime toLocalDateTimeUtc(OffsetDateTime odt) {
-        return odt == null ? null : odt.withOffsetSameInstant(ZoneOffset.UTC).toLocalDateTime();
     }
 }
