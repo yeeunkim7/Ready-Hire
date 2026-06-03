@@ -39,7 +39,7 @@ function LoginPage() {
           type="button"
           className="w-full rounded-xl bg-primary px-6 py-3 font-medium text-white transition hover:bg-indigo-700"
           onClick={() => {
-            window.location.href = '/oauth2/authorization/google'
+            window.location.href = `${import.meta.env.VITE_API_BASE_URL}/oauth2/authorization/google`
           }}
         >
           Google로 시작하기
