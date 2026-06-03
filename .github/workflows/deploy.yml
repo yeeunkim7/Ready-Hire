@@ -28,8 +28,10 @@ jobs:
         run: ./gradlew bootJar -x test
 
       - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ secrets.AZURE_APP_NAME }}
           publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
           package: build/libs/*.jar
+          os-type: Linux
+          startup-command: java -jar /home/site/wwwroot/app.jar
