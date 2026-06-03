@@ -1,7 +1,7 @@
 package com.devinterview.api.domain.interview.dto;
 
 import com.devinterview.api.domain.interview.entity.Interview;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,7 +18,7 @@ public class InterviewSummaryDto {
     private List<String> techStack;
     private String experienceLevel;
     private String status;
-    private OffsetDateTime createdAt;
+    private LocalDateTime createdAt;
 
     public static InterviewSummaryDto from(Interview interview) {
         return InterviewSummaryDto.builder()

@@ -6,7 +6,8 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
 import javax.crypto.SecretKey;
@@ -31,8 +32,8 @@ public class JwtTokenProvider {
     }
 
     public String createAccessToken(Long userId, String email, String role, String planType) {
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        OffsetDateTime expiresAt = now.plusSeconds(accessTokenExpirationSeconds);
+        Instant now = Instant.now();
+        Instant expiresAt = now.plusSeconds(accessTokenExpirationSeconds);
 
         return Jwts.builder()
             .subject(String.valueOf(userId))
@@ -40,21 +41,21 @@ public class JwtTokenProvider {
             .claim("email", email)
             .claim("role", role)
             .claim("planType", planType)
-            .issuedAt(Date.from(now.toInstant()))
-            .expiration(Date.from(expiresAt.toInstant()))
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(expiresAt))
             .signWith(signingKey)
             .compact();
     }
 
     public String createRefreshToken(Long userId) {
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        OffsetDateTime expiresAt = now.plusSeconds(refreshTokenExpirationSeconds);
+        Instant now = Instant.now();
+        Instant expiresAt = now.plusSeconds(refreshTokenExpirationSeconds);
 
         return Jwts.builder()
             .subject(String.valueOf(userId))
             .claim("tokenType", "REFRESH")
-            .issuedAt(Date.from(now.toInstant()))
-            .expiration(Date.from(expiresAt.toInstant()))
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(expiresAt))
             .signWith(signingKey)
             .compact();
     }
@@ -88,9 +89,9 @@ public class JwtTokenProvider {
         return getClaims(token).get("planType", String.class);
     }
 
-    public OffsetDateTime getExpiration(String token) {
+    public LocalDateTime getExpiration(String token) {
         Date expiration = getClaims(token).getExpiration();
-        return expiration.toInstant().atOffset(ZoneOffset.UTC);
+        return LocalDateTime.ofInstant(expiration.toInstant(), ZoneOffset.UTC);
     }
 
     private SecretKey buildSigningKey(String secret) {

@@ -10,7 +10,8 @@ import com.devinterview.api.domain.enums.Provider;
 import com.devinterview.api.domain.repository.UserRepository;
 import com.devinterview.api.security.jwt.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -68,7 +69,7 @@ public class AuthService {
             throw new AuthException("Refresh token revoked.");
         }
 
-        if (saved.getExpiresAt().isBefore(OffsetDateTime.now())) {
+        if (saved.getExpiresAt().isBefore(LocalDateTime.now(ZoneOffset.UTC))) {
             throw new AuthException("Refresh token expired.");
         }
 
