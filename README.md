@@ -2,8 +2,20 @@
 
 > AI 기반 모의면접 서비스 — 1인 풀스택 개인 프로젝트
 
-직무 · 기술스택 · 경력을 선택하면 GPT-4o-mini가 면접 질문 5개를 생성하고, 답변에 대한 점수 · 피드백 · 모범답안을 제공합니다.
-무료 플랜(하루 3회) / PRO 플랜(무제한) 구독 모델로 운영됩니다.
+직무 · 기술스택 · 경력을 선택하면 GPT-4o-mini가 면접 질문 5개를 생성하고, 답변에 대한 점수 · 피드백 · 모범답안을 제공합니다.  
+**FREE**(하루 3회) / **PRO**(무제한, 월 9,900원) 구독 모델로 운영됩니다.
+
+---
+
+## Live Service
+
+| 서비스 | URL |
+|--------|-----|
+| **Frontend** | https://ready-hire-vert.vercel.app |
+| **Backend API** | https://ready-hire-api-fpdhhrd5abahhxhh.koreacentral-01.azurewebsites.net |
+| **Swagger UI** | https://ready-hire-api-fpdhhrd5abahhxhh.koreacentral-01.azurewebsites.net/swagger-ui/index.html |
+
+> Azure F1 무료 플랜은 슬립 모드가 있어 첫 요청이 느릴 수 있습니다. API가 응답하지 않으면 Swagger URL을 먼저 열어 인스턴스를 깨운 뒤 이용하세요.
 
 ---
 
@@ -11,55 +23,177 @@
 
 | 영역 | 기술 |
 |------|------|
-| Backend | Java 17, Spring Boot 3.3.x, Spring Security, JPA, WebFlux |
-| Frontend | React, Tailwind CSS |
-| Database | PostgreSQL (Supabase) |
-| AI | OpenAI GPT-4o-mini (WebClient 기반) |
-| 인증 | Google OAuth2 + JWT (STATELESS), jjwt 0.12.x |
-| 결제 | 포트원 (토스페이먼츠) |
-| 배포 | AWS EC2 (백엔드), Vercel (프론트엔드) |
-| 문서 | SpringDoc OpenAPI (Swagger) |
-| 마이그레이션 | Flyway |
+| **Backend** | Java 17, Spring Boot 3.3.x, Spring Security, JPA, WebFlux |
+| **Frontend** | React 18, Vite, Tailwind CSS, React Router v6, Context API |
+| **Database** | PostgreSQL (Supabase, Session Pooler 5432) |
+| **AI** | OpenAI GPT-4o-mini (WebClient 기반) |
+| **인증** | Google OAuth2 + JWT (STATELESS), Cookie 기반 인가 요청 저장 |
+| **결제** | 포트원 (토스페이먼츠) |
+| **배포** | Azure App Service (백엔드), Vercel (프론트엔드) |
+| **CI/CD** | GitHub Actions (`main` push → 자동 배포) |
+| **문서** | SpringDoc OpenAPI (Swagger) |
+| **마이그레이션** | Flyway |
 
 ---
 
-## Getting Started
+## Features
 
-### 1. 환경 변수 설정
+### Backend
 
-| 변수명 | 설명 | 기본값 |
-|--------|------|--------|
-| `DB_URL` | PostgreSQL URL (예: `jdbc:postgresql://localhost:5432/readyhire`) | — |
-| `DB_USERNAME` | DB 사용자명 | — |
-| `DB_PASSWORD` | DB 비밀번호 | — |
-| `JWT_SECRET` | JWT 서명 키 (32바이트 이상 권장) | — |
-| `JWT_ACCESS_TOKEN_EXPIRATION_SECONDS` | 액세스 토큰 만료 시간 | `3600` |
-| `JWT_REFRESH_TOKEN_EXPIRATION_SECONDS` | 리프레시 토큰 만료 시간 | `1209600` |
-| `OPENAI_API_KEY` | OpenAI API 키 | — |
-| `GOOGLE_CLIENT_ID` | Google OAuth2 클라이언트 ID | — |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth2 클라이언트 시크릿 | — |
+- Google OAuth2 로그인 + JWT 발급 / 갱신 / 로그아웃
+- OAuth2 STATELESS: 세션 없이 **쿠키 기반** `AuthorizationRequest` 저장
+- 면접 플로우: 시작 → AI 질문 생성 → 답변 제출 → AI 피드백 → 완료 / 히스토리
+- FREE 플랜 **하루 3회** 사용량 제한 (`daily_usage`)
+- 포트원 결제 검증, PRO 구독 활성화 / 해지, 웹훅 엔드포인트
+- CORS 설정 (Vercel ↔ Azure 크로스 오리진 API)
+- 공통 응답 `ApiResponse`, `GlobalExceptionHandler`, Swagger
+
+### Frontend
+
+| 페이지 | 설명 |
+|--------|------|
+| **Login** | Google OAuth 시작 |
+| **OAuth2Callback** | 토큰 저장 후 대시보드 이동 |
+| **Dashboard** | 계정 · 남은 횟수 · 면접 히스토리 |
+| **InterviewSetup** | 직무 · 기술스택 · 경력 설정 |
+| **Interview** | 면접 진행 (질문 1개씩 순차 표시) |
+| **InterviewResult** | 점수 · 피드백 결과 (PRO만 상세 제공) |
+| **Subscription** | PRO 구독 · 결제 |
+
+---
+
+## Plan
+
+| 기능 | FREE | PRO |
+|------|------|-----|
+| 면접 횟수 | 하루 **3회** | **무제한** |
+| AI 피드백 | **점수만** | 점수 + 잘한 점 + 개선점 + 모범답안 |
+| 가격 | 무료 | **월 9,900원** (포트원) |
+
+---
+
+## Architecture & Deployment
+
+```
+[Browser]
+    │
+    ▼
+[Vercel]  ready-hire-vert.vercel.app
+    │  REST API (Bearer JWT)
+    ▼
+[Azure App Service]  ready-hire-api
+    │                    │
+    │                    ├── Google OAuth2
+    │                    └── OpenAI API
+    ▼
+[Supabase PostgreSQL]  Session Pooler :5432
+```
+
+### CI/CD (Backend)
+
+`main` 브랜치 push 시 GitHub Actions가 자동 배포합니다.
+
+```
+git push origin main
+    → ./gradlew bootJar
+    → azure/webapps-deploy@v2
+    → Azure App Service (JAR: app.jar)
+```
+
+워크플로: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
+
+### Azure App Service 설정 (참고)
+
+| 항목 | 값 |
+|------|-----|
+| Startup Command | `java -jar /home/site/wwwroot/app.jar` |
+| `OAUTH2_REDIRECT_URI` | `https://ready-hire-vert.vercel.app/oauth2/callback` |
+| Google Redirect URI | `{baseUrl}/login/oauth2/code/google` |
+
+### Vercel 환경 변수 (Frontend)
+
+| Key | 예시 |
+|-----|------|
+| `VITE_API_BASE_URL` | Azure API URL |
+| `VITE_OAUTH2_REDIRECT_URI` | `https://ready-hire-vert.vercel.app/oauth2/callback` |
+| `VITE_PORTONE_CHANNEL_KEY` | 포트원 채널 키 |
+
+> `VITE_*` 변수는 **빌드 시점**에 반영됩니다. 변경 후 Vercel에서 Redeploy가 필요합니다.
+
+---
+
+## Getting Started (Local)
+
+### 1. 환경 변수 (`.env`)
+
+프로젝트 루트에 `.env` 파일을 생성합니다. (`.gitignore`에 포함 — 커밋 금지)
+
+| 변수명 | 설명 |
+|--------|------|
+| `DB_URL` | PostgreSQL JDBC URL (`?sslmode=require` 권장) |
+| `DB_USERNAME` | DB 사용자명 |
+| `DB_PASSWORD` | DB 비밀번호 |
+| `JWT_SECRET` | JWT 서명 키 (32바이트 이상 권장) |
+| `JWT_ACCESS_TOKEN_EXPIRATION_SECONDS` | 액세스 토큰 만료 (기본 `3600`) |
+| `JWT_REFRESH_TOKEN_EXPIRATION_SECONDS` | 리프레시 토큰 만료 (기본 `1209600`) |
+| `OPENAI_API_KEY` | OpenAI API 키 |
+| `GOOGLE_CLIENT_ID` | Google OAuth2 Client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth2 Client Secret |
+| `OAUTH2_REDIRECT_URI` | 프론트 콜백 URL (로컬: `http://localhost:5173/oauth2/callback`) |
+| `PORTONE_V2_API_SECRET` | 포트원 API Secret |
+| `PORTONE_CHANNEL_KEY` | 포트원 채널 키 |
+| `CORS_ALLOWED_ORIGINS` | (선택) 허용 origin, 쉼표 구분 |
+
+**Supabase 연결 팁:** Transaction Pooler(6543) 대신 **Session Pooler(5432)** 를 사용하고, Hikari에 `prepareThreshold: 0`이 적용되어 있습니다.
 
 ### 2. DB 마이그레이션
 
-애플리케이션 시작 시 Flyway가 자동으로 `V1__init.sql`을 실행합니다. 별도 작업이 필요 없습니다.
+애플리케이션 기동 시 Flyway가 자동 실행됩니다. (`FlywayConfig` — 공용 DataSource 사용)
 
-### 3. 실행
+| 파일 | 내용 |
+|------|------|
+| `V1__init.sql` | users, profiles, interviews 등 핵심 스키마 |
+| `V2__portone_subscriptions_payments.sql` | 구독 · 결제 테이블 |
+
+### 3. 백엔드 실행
+
+```powershell
+# Windows PowerShell
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"
+.\gradlew.bat bootRun
+```
 
 ```bash
 # macOS / Linux
 ./gradlew bootRun
+```
 
-# Windows PowerShell
-.\gradlew.bat bootRun
+- API: http://localhost:8080  
+- Swagger: http://localhost:8080/swagger-ui/index.html
+
+### 4. 프론트엔드 실행
+
+```bash
+cd ready-hire-frontend
+npm install
+npm run dev
+```
+
+- App: http://localhost:5173  
+- `ready-hire-frontend/.env.local` 예시:
+
+```env
+VITE_API_BASE_URL=http://localhost:8080
+VITE_OAUTH2_REDIRECT_URI=http://localhost:5173/oauth2/callback
 ```
 
 ---
 
-## API
+## API Overview
 
 ### 공통 응답 포맷
 
-모든 API 응답(JWT 인증 필터 오류 포함)은 아래 구조를 따릅니다.
+모든 API 응답(JWT 필터 오류 포함)은 아래 구조를 따릅니다.
 
 ```json
 {
@@ -69,138 +203,67 @@
 }
 ```
 
-인증이 필요한 엔드포인트는 `Authorization: Bearer <accessToken>` 헤더를 포함해야 합니다.
-
----
+인증이 필요한 엔드포인트는 `Authorization: Bearer <accessToken>` 헤더가 필요합니다.
 
 ### Auth — `/api/auth`
 
-#### POST `/api/auth/login`
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| `POST` | `/api/auth/login` | 이메일 + 비밀번호 로그인 |
+| `POST` | `/api/auth/refresh` | 액세스 토큰 갱신 |
+| `POST` | `/api/auth/logout` | 리프레시 토큰 무효화 |
 
-이메일 + 비밀번호 로그인
+### OAuth2
 
-```json
-// Request
-{
-  "email": "user@example.com",
-  "password": "plainPassword"
-}
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| `GET` | `/oauth2/authorization/google` | Google 로그인 시작 |
+| — | `/login/oauth2/code/google` | Google 콜백 (백엔드) |
 
-// Response 200
-{
-  "success": true,
-  "message": "Login successful.",
-  "data": {
-    "accessToken": "eyJ...",
-    "refreshToken": "eyJ...",
-    "tokenType": "Bearer",
-    "expiresIn": 3600
-  }
-}
+로그인 성공 시 프론트 `OAUTH2_REDIRECT_URI`로 리다이렉트됩니다.
+
+```
+https://ready-hire-vert.vercel.app/oauth2/callback?accessToken=...&refreshToken=...
 ```
 
-#### POST `/api/auth/refresh`
-
-액세스 토큰 갱신
-
-```json
-// Request
-{
-  "refreshToken": "eyJ..."
-}
-
-// Response 200
-{
-  "success": true,
-  "message": "Token refreshed.",
-  "data": {
-    "accessToken": "eyJ...",
-    "refreshToken": "eyJ...",
-    "tokenType": "Bearer",
-    "expiresIn": 3600
-  }
-}
-```
-
-#### POST `/api/auth/logout`
-
-리프레시 토큰 무효화
-
-```json
-// Request
-{
-  "refreshToken": "eyJ..."
-}
-
-// Response 200
-{
-  "success": true,
-  "message": "Logged out successfully.",
-  "data": null
-}
-```
-
----
-
-### Interview — `/api/interviews` _(구현 예정)_
+### Interview — `/api/interviews`
 
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
 | `POST` | `/api/interviews` | 면접 시작 + 질문 5개 생성 |
-| `POST` | `/api/interviews/{id}/answers` | 답변 제출 + AI 피드백 생성 |
-| `GET` | `/api/interviews` | 면접 히스토리 목록 조회 |
+| `GET` | `/api/interviews` | 면접 히스토리 목록 |
 | `GET` | `/api/interviews/{id}` | 면접 상세 조회 |
+| `POST` | `/api/interviews/{id}/answers` | 답변 제출 + AI 피드백 |
+| `POST` | `/api/interviews/{id}/complete` | 면접 종료 |
+
+### Payment — `/api/payments`
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| `POST` | `/api/payments/verify` | 포트원 결제 검증 + PRO 활성화 |
+| `GET` | `/api/payments/subscription` | 구독 상태 조회 |
+| `DELETE` | `/api/payments/subscription` | 구독 해지 |
+| `POST` | `/api/payments/webhook` | 포트원 웹훅 (인증 불필요) |
+
+상세 스펙은 Swagger UI를 참고하세요.
 
 ---
 
-## DB 설계 (9개 테이블)
+## Database (9 Tables)
 
 ```
-users               — 회원 기본 정보 (plan_type 컬럼으로 플랜 관리)
-user_profiles       — 직무 / 기술스택 / 경력 프로필
-subscriptions       — 구독 정보 (FREE / PRO), user당 active 구독 1개 제한
+users               — 회원 (plan_type: FREE / PRO)
+user_profiles       — 직무 / 기술스택 / 경력
+subscriptions       — 구독 정보 (user당 active 1개)
 payments            — 포트원 결제 내역
-daily_usage         — 무료 플랜 일일 사용량 (하루 3회 제한)
+daily_usage         — FREE 일일 사용량 (하루 3회)
 interviews          — 면접 세션
 interview_questions — GPT 생성 질문
 interview_answers   — 사용자 답변
-interview_results   — AI 피드백 (detailed_feedback: jsonb, PRO 플랜만 저장)
+interview_results   — AI 피드백 (PRO: 상세 jsonb)
 ```
 
-마이그레이션 파일: `src/main/resources/db/migration/V1__init.sql`
-
----
-
-## 플랜 구분
-
-| 기능 | FREE | PRO |
-|------|------|-----|
-| 면접 횟수 | 하루 3회 | 무제한 |
-| AI 피드백 | 기본 점수 | 점수 + 잘한점 + 개선점 + 모범답안 |
-| 히스토리 | 최근 10건 | 전체 |
-| 결제 | — | 포트원 (토스페이먼츠) |
-
----
-
-## 개발 현황
-
-| 주차 | 작업 | 상태 |
-|------|------|------|
-| 1주 | 프로젝트 세팅, ERD, JWT 인증 | ✅ 완료 |
-| 2주 | Google OAuth2, 회원가입/조회 API | 🔄 진행 중 |
-| 3주 | 면접 시작 / 질문 생성 + OpenAI 연동 | ⏳ 예정 |
-| 4주 | 답변 저장 / 면접 종료 / 피드백 생성 | ⏳ 예정 |
-| 5주 | 사용량 제한 + 포트원 결제 연동 | ⏳ 예정 |
-| 6주 | React 프론트엔드 | ⏳ 예정 |
-| 7주 | 테스트 코드 + AWS 배포 | ⏳ 예정 |
-| 8주 | 앱 래핑 + 스토어 제출 | ⏳ 예정 |
-
----
-
-## API 문서
-
-- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+마이그레이션: `src/main/resources/db/migration/`
 
 ---
 
@@ -208,12 +271,47 @@ interview_results   — AI 피드백 (detailed_feedback: jsonb, PRO 플랜만 �
 
 ```
 com.devinterview.api
-├── auth          # JWT, OAuth2, 인증 관련
-├── user          # 회원, 구독, 결제
-├── interview     # 면접 세션, 질문, 답변, 결과
-├── ai            # ChatService, OpenAiChatService
-├── common        # ApiResponse, CustomException, ErrorCode
-└── config        # SecurityConfig, WebClientConfig 등
+├── auth              # JWT, OAuth2, 인증
+├── domain
+│   ├── interview     # 면접 세션, 질문, 답변, 결과
+│   ├── payment       # 구독, 결제
+│   ├── usage         # 일일 사용량
+│   └── ai            # ChatService, OpenAiChatService
+├── common            # ApiResponse, CustomException, ErrorCode
+├── config            # SecurityConfig, CorsConfig, FlywayConfig 등
+└── security          # JWT Filter, UserDetails
+
+엔트리 포인트: DevInterviewApplication
 ```
 
-> 엔트리 포인트: `DevInterviewApplication`
+```
+ready-hire-frontend/
+├── src/
+│   ├── api/          # axios + API 함수
+│   ├── components/   # 공통 UI
+│   ├── contexts/     # AuthContext, ToastContext
+│   ├── pages/        # 라우팅 페이지
+│   └── utils/        # 토큰, API unwrap
+└── vercel.json
+```
+
+---
+
+## Troubleshooting (개발 중 해결한 이슈)
+
+| # | 증상 | 해결 |
+|---|------|------|
+| 1 | Flyway 마이그레이션 실패 | `V1__init.sql` UTF-16 → **UTF-8 (무 BOM)** 재저장 |
+| 2 | Supabase 연결 불안정 | Transaction pool → **Session pool(5432)** + `prepareThreshold=0` |
+| 3 | JPA Auditing 오류 | `OffsetDateTime` / `Instant` → **`LocalDateTime` 통일** |
+| 4 | OAuth2 STATELESS 실패 | HttpSession 불가 → **쿠키 기반** 인가 요청 저장 |
+| 5 | Azure 첫 요청 무응답 | F1 슬립 모드 → **Swagger로 인스턴스 깨우기** |
+| 6 | Google 로그인 버튼 무반응 | 상대경로 → **`VITE_API_BASE_URL` 절대경로** |
+| 7 | OAuth `COMMON_999` | `OAUTH2_REDIRECT_URI`를 **Vercel 콜백 URL**로 수정 |
+| 8 | 면접 시작 CORS 오류 | 백엔드 **CORS 설정** + API 인증 실패 시 401 JSON |
+
+---
+
+## License
+
+Personal portfolio project.
