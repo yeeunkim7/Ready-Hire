@@ -199,7 +199,7 @@ public class OpenAiChatService implements ChatService {
             """.formatted(
             command.jobPosition(),
             topics,
-            command.careerLevel(),
+            command.companyName() != null ? command.companyName() : command.careerLevel().name(),
             command.questionCount()
         );
     }

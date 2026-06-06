@@ -121,7 +121,7 @@ public class InterviewService {
                     InterviewType.TECHNICAL,
                     parseCareerLevel(request.getExperienceLevel()),
                     request.getJobRole(),
-                    MODE_JOB_POSTING.equals(interviewMode) ? request.getExperienceLevel() : null,
+                    request.getExperienceLevel(),
                     QUESTION_COUNT,
                     techStack,
                     interviewMode,
