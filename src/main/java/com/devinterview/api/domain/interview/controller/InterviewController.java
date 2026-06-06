@@ -7,6 +7,7 @@ import com.devinterview.api.domain.interview.dto.InterviewCompleteResponse;
 import com.devinterview.api.domain.interview.dto.InterviewStartRequest;
 import com.devinterview.api.domain.interview.dto.InterviewStartResponse;
 import com.devinterview.api.domain.interview.dto.InterviewSummaryDto;
+import com.devinterview.api.domain.interview.dto.PdfParseResponse;
 import com.devinterview.api.domain.interview.service.InterviewService;
 import com.devinterview.api.security.user.CustomUserDetails;
 import jakarta.validation.Valid;
@@ -15,12 +16,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 면접 세션 시작 및 히스토리 API 컨트롤러.
@@ -31,6 +35,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class InterviewController {
 
     private final InterviewService interviewService;
+
+    @PostMapping(value = "/parse-pdf", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<PdfParseResponse>> parsePdf(
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @RequestParam("file") MultipartFile file
+    ) {
+        PdfParseResponse response = interviewService.parsePdf(file);
+        return ResponseEntity.ok(ApiResponse.success("PDF 텍스트 추출이 완료되었습니다.", response));
+    }
 
     @PostMapping
     public ResponseEntity<ApiResponse<InterviewStartResponse>> startInterview(

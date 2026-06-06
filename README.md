@@ -7,7 +7,7 @@
 
 ---
 
-## Live Service
+## Service URLs
 
 | 서비스 | URL |
 |--------|-----|
@@ -41,12 +41,11 @@
 ### Backend
 
 - Google OAuth2 로그인 + JWT 발급 / 갱신 / 로그아웃
-- OAuth2 STATELESS: 세션 없이 **쿠키 기반** `AuthorizationRequest` 저장
-- 면접 플로우: 시작 → AI 질문 생성 → 답변 제출 → AI 피드백 → 완료 / 히스토리
-- FREE 플랜 **하루 3회** 사용량 제한 (`daily_usage`)
+- OAuth2 STATELESS: 세션 없이 쿠키 기반 인가 요청 저장
+- 면접 시작 → AI 질문 생성 → 답변 제출 → AI 피드백 → 완료 / 히스토리
+- FREE 플랜 하루 3회 사용량 제한
 - 포트원 결제 검증, PRO 구독 활성화 / 해지, 웹훅 엔드포인트
-- CORS 설정 (Vercel ↔ Azure 크로스 오리진 API)
-- 공통 응답 `ApiResponse`, `GlobalExceptionHandler`, Swagger
+- 공통 응답 포맷 `ApiResponse`, `GlobalExceptionHandler`, Swagger
 
 ### Frontend
 
@@ -89,7 +88,7 @@
 [Supabase PostgreSQL]  Session Pooler :5432
 ```
 
-### CI/CD (Backend)
+### CI/CD
 
 `main` 브랜치 push 시 GitHub Actions가 자동 배포합니다.
 
@@ -102,7 +101,7 @@ git push origin main
 
 워크플로: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
 
-### Azure App Service 설정 (참고)
+### Azure App Service (참고)
 
 | 항목 | 값 |
 |------|-----|
@@ -110,15 +109,15 @@ git push origin main
 | `OAUTH2_REDIRECT_URI` | `https://ready-hire-vert.vercel.app/oauth2/callback` |
 | Google Redirect URI | `{baseUrl}/login/oauth2/code/google` |
 
-### Vercel 환경 변수 (Frontend)
+### Vercel Environment Variables
 
-| Key | 예시 |
+| Key | 설명 |
 |-----|------|
-| `VITE_API_BASE_URL` | Azure API URL |
+| `VITE_API_BASE_URL` | Azure Backend API URL |
 | `VITE_OAUTH2_REDIRECT_URI` | `https://ready-hire-vert.vercel.app/oauth2/callback` |
 | `VITE_PORTONE_CHANNEL_KEY` | 포트원 채널 키 |
 
-> `VITE_*` 변수는 **빌드 시점**에 반영됩니다. 변경 후 Vercel에서 Redeploy가 필요합니다.
+> `VITE_*` 변수는 빌드 시점에 반영됩니다. 변경 후 **Redeploy**가 필요합니다.
 
 ---
 
@@ -126,29 +125,34 @@ git push origin main
 
 ### 1. 환경 변수 (`.env`)
 
-프로젝트 루트에 `.env` 파일을 생성합니다. (`.gitignore`에 포함 — 커밋 금지)
+프로젝트 루트에 `.env` 파일을 생성합니다. (`.gitignore` 포함 — 커밋 금지)
+
+```
+DB_URL
+DB_USERNAME
+DB_PASSWORD
+JWT_SECRET
+JWT_ACCESS_TOKEN_EXPIRATION_SECONDS
+JWT_REFRESH_TOKEN_EXPIRATION_SECONDS
+OPENAI_API_KEY
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+OAUTH2_REDIRECT_URI
+PORTONE_V2_API_SECRET
+PORTONE_CHANNEL_KEY
+```
 
 | 변수명 | 설명 |
 |--------|------|
-| `DB_URL` | PostgreSQL JDBC URL (`?sslmode=require` 권장) |
-| `DB_USERNAME` | DB 사용자명 |
-| `DB_PASSWORD` | DB 비밀번호 |
+| `DB_URL` | PostgreSQL JDBC URL (`?sslmode=require` 권장, Session Pooler **5432**) |
+| `OAUTH2_REDIRECT_URI` | 로컬: `http://localhost:5173/oauth2/callback` |
 | `JWT_SECRET` | JWT 서명 키 (32바이트 이상 권장) |
-| `JWT_ACCESS_TOKEN_EXPIRATION_SECONDS` | 액세스 토큰 만료 (기본 `3600`) |
-| `JWT_REFRESH_TOKEN_EXPIRATION_SECONDS` | 리프레시 토큰 만료 (기본 `1209600`) |
-| `OPENAI_API_KEY` | OpenAI API 키 |
-| `GOOGLE_CLIENT_ID` | Google OAuth2 Client ID |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth2 Client Secret |
-| `OAUTH2_REDIRECT_URI` | 프론트 콜백 URL (로컬: `http://localhost:5173/oauth2/callback`) |
-| `PORTONE_V2_API_SECRET` | 포트원 API Secret |
-| `PORTONE_CHANNEL_KEY` | 포트원 채널 키 |
-| `CORS_ALLOWED_ORIGINS` | (선택) 허용 origin, 쉼표 구분 |
 
-**Supabase 연결 팁:** Transaction Pooler(6543) 대신 **Session Pooler(5432)** 를 사용하고, Hikari에 `prepareThreshold: 0`이 적용되어 있습니다.
+**Supabase 팁:** Transaction Pooler(6543) 대신 Session Pooler(5432) 사용. Hikari `prepareThreshold: 0` 적용.
 
-### 2. DB 마이그레이션
+### 2. Flyway 마이그레이션
 
-애플리케이션 기동 시 Flyway가 자동 실행됩니다. (`FlywayConfig` — 공용 DataSource 사용)
+애플리케이션 기동 시 Flyway가 자동 실행됩니다. (`FlywayConfig` — 공용 DataSource)
 
 | 파일 | 내용 |
 |------|------|
@@ -168,7 +172,7 @@ $env:JAVA_HOME = "C:\Program Files\Java\jdk-17"
 ./gradlew bootRun
 ```
 
-- API: http://localhost:8080  
+- API: http://localhost:8080
 - Swagger: http://localhost:8080/swagger-ui/index.html
 
 ### 4. 프론트엔드 실행
@@ -179,8 +183,9 @@ npm install
 npm run dev
 ```
 
-- App: http://localhost:5173  
-- `ready-hire-frontend/.env.local` 예시:
+- App: http://localhost:5173
+
+`ready-hire-frontend/.env.local` 예시:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8080
@@ -193,8 +198,6 @@ VITE_OAUTH2_REDIRECT_URI=http://localhost:5173/oauth2/callback
 
 ### 공통 응답 포맷
 
-모든 API 응답(JWT 필터 오류 포함)은 아래 구조를 따릅니다.
-
 ```json
 {
   "success": true,
@@ -203,7 +206,7 @@ VITE_OAUTH2_REDIRECT_URI=http://localhost:5173/oauth2/callback
 }
 ```
 
-인증이 필요한 엔드포인트는 `Authorization: Bearer <accessToken>` 헤더가 필요합니다.
+인증 API는 `Authorization: Bearer <accessToken>` 헤더가 필요합니다.
 
 ### Auth — `/api/auth`
 
@@ -220,7 +223,7 @@ VITE_OAUTH2_REDIRECT_URI=http://localhost:5173/oauth2/callback
 | `GET` | `/oauth2/authorization/google` | Google 로그인 시작 |
 | — | `/login/oauth2/code/google` | Google 콜백 (백엔드) |
 
-로그인 성공 시 프론트 `OAUTH2_REDIRECT_URI`로 리다이렉트됩니다.
+로그인 성공 시 프론트로 리다이렉트:
 
 ```
 https://ready-hire-vert.vercel.app/oauth2/callback?accessToken=...&refreshToken=...
@@ -243,27 +246,27 @@ https://ready-hire-vert.vercel.app/oauth2/callback?accessToken=...&refreshToken=
 | `POST` | `/api/payments/verify` | 포트원 결제 검증 + PRO 활성화 |
 | `GET` | `/api/payments/subscription` | 구독 상태 조회 |
 | `DELETE` | `/api/payments/subscription` | 구독 해지 |
-| `POST` | `/api/payments/webhook` | 포트원 웹훅 (인증 불필요) |
+| `POST` | `/api/payments/webhook` | 포트원 웹훅 |
 
-상세 스펙은 Swagger UI를 참고하세요.
+상세 스펙: **Swagger UI** 참고
 
 ---
 
 ## Database (9 Tables)
 
-```
-users               — 회원 (plan_type: FREE / PRO)
-user_profiles       — 직무 / 기술스택 / 경력
-subscriptions       — 구독 정보 (user당 active 1개)
-payments            — 포트원 결제 내역
-daily_usage         — FREE 일일 사용량 (하루 3회)
-interviews          — 면접 세션
-interview_questions — GPT 생성 질문
-interview_answers   — 사용자 답변
-interview_results   — AI 피드백 (PRO: 상세 jsonb)
-```
+| 테이블 | 설명 |
+|--------|------|
+| `users` | 회원 (plan_type: FREE / PRO) |
+| `user_profiles` | 직무 / 기술스택 / 경력 |
+| `subscriptions` | 구독 정보 |
+| `payments` | 포트원 결제 내역 |
+| `daily_usage` | FREE 일일 사용량 (하루 3회) |
+| `interviews` | 면접 세션 |
+| `interview_questions` | GPT 생성 질문 |
+| `interview_answers` | 사용자 답변 |
+| `interview_results` | AI 피드백 (PRO: 상세) |
 
-마이그레이션: `src/main/resources/db/migration/`
+마이그레이션 경로: `src/main/resources/db/migration/`
 
 ---
 
@@ -271,15 +274,14 @@ interview_results   — AI 피드백 (PRO: 상세 jsonb)
 
 ```
 com.devinterview.api
-├── auth              # JWT, OAuth2, 인증
+├── auth              # JWT, OAuth2, 인증 관련
 ├── domain
 │   ├── interview     # 면접 세션, 질문, 답변, 결과
 │   ├── payment       # 구독, 결제
 │   ├── usage         # 일일 사용량
 │   └── ai            # ChatService, OpenAiChatService
 ├── common            # ApiResponse, CustomException, ErrorCode
-├── config            # SecurityConfig, CorsConfig, FlywayConfig 등
-└── security          # JWT Filter, UserDetails
+└── config            # SecurityConfig, WebClientConfig 등
 
 엔트리 포인트: DevInterviewApplication
 ```
@@ -297,7 +299,9 @@ ready-hire-frontend/
 
 ---
 
-## Troubleshooting (개발 중 해결한 이슈)
+## Troubleshooting
+
+개발·배포 과정에서 해결한 주요 이슈입니다.
 
 | # | 증상 | 해결 |
 |---|------|------|
@@ -305,10 +309,8 @@ ready-hire-frontend/
 | 2 | Supabase 연결 불안정 | Transaction pool → **Session pool(5432)** + `prepareThreshold=0` |
 | 3 | JPA Auditing 오류 | `OffsetDateTime` / `Instant` → **`LocalDateTime` 통일** |
 | 4 | OAuth2 STATELESS 실패 | HttpSession 불가 → **쿠키 기반** 인가 요청 저장 |
-| 5 | Azure 첫 요청 무응답 | F1 슬립 모드 → **Swagger로 인스턴스 깨우기** |
+| 5 | Azure 콜드 스타트 | F1 슬립 모드 → **Swagger 먼저 접속해 깨우기** |
 | 6 | Google 로그인 버튼 무반응 | 상대경로 → **`VITE_API_BASE_URL` 절대경로** |
-| 7 | OAuth `COMMON_999` | `OAUTH2_REDIRECT_URI`를 **Vercel 콜백 URL**로 수정 |
-| 8 | 면접 시작 CORS 오류 | 백엔드 **CORS 설정** + API 인증 실패 시 401 JSON |
 
 ---
 

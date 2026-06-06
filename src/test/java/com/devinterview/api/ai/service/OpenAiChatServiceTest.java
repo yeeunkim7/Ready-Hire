@@ -99,7 +99,9 @@ class OpenAiChatServiceTest {
             "Backend Developer",
             "DevView",
             5,
-            java.util.List.of("Java", "Spring", "JPA")
+            java.util.List.of("Java", "Spring", "JPA"),
+            "STANDARD",
+            null
         );
 
         // when
@@ -124,7 +126,9 @@ class OpenAiChatServiceTest {
             "Backend Developer",
             "DevView",
             5,
-            java.util.List.of("Java")
+            java.util.List.of("Java"),
+            "STANDARD",
+            null
         );
 
         // when / then

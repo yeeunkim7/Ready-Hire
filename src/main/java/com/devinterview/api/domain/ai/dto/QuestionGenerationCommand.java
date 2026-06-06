@@ -11,6 +11,13 @@ public record QuestionGenerationCommand(
     String jobPosition,
     String companyName,
     int questionCount,
-    List<String> focusTopics
+    List<String> focusTopics,
+    String interviewMode,
+    String jobPostingText
 ) {
+    public QuestionGenerationCommand {
+        if (interviewMode == null || interviewMode.isBlank()) {
+            interviewMode = "STANDARD";
+        }
+    }
 }

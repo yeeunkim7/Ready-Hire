@@ -12,15 +12,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Duration;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OpenAiChatService implements ChatService {
+
+    private static final String MODE_JOB_POSTING = "JOB_POSTING";
 
     private static final String OPENAI_CHAT_COMPLETIONS_PATH = "/v1/chat/completions";
 
@@ -66,6 +70,7 @@ public class OpenAiChatService implements ChatService {
 
     @Override
     public QuestionGenerationResult generateQuestions(QuestionGenerationCommand command) {
+        log.info("[AI] Question generation mode={}", command.interviewMode());
         String userPrompt = buildQuestionPrompt(command);
         ChatCompletionResponse response = requestChatCompletion(QUESTION_SYSTEM_MESSAGE, userPrompt);
 
@@ -162,28 +167,39 @@ public class OpenAiChatService implements ChatService {
     }
 
     private String buildQuestionPrompt(QuestionGenerationCommand command) {
+        if (MODE_JOB_POSTING.equalsIgnoreCase(command.interviewMode())) {
+            return """
+                당신은 전문 면접관입니다.
+                아래는 채용공고 내용입니다:
+                %s
+
+                이 채용공고에 지원하는 %s 지원자를 위한
+                핵심 역량 중심 면접 질문 %d개를 생성하세요.
+                직무: %s
+
+                질문은 한국어로 작성하고 JSON 스키마에 맞게 반환하세요.
+                """.formatted(
+                command.jobPostingText(),
+                command.companyName() != null ? command.companyName() : command.careerLevel().name(),
+                command.questionCount(),
+                command.jobPosition()
+            );
+        }
+
         String topics = command.focusTopics() == null || command.focusTopics().isEmpty()
-            ? "(none)"
+            ? "(없음)"
             : String.join(", ", command.focusTopics());
 
         return """
-            Candidate Profile:
-            - User ID: %d
-            - Interview Type: %s
-            - Career Level: %s
-            - Job Position: %s
-            - Target Company: %s
-            - Focus Topics(Tech Stack): %s
-            - Question Count: %d
+            당신은 전문 면접관입니다.
+            직무: %s, 기술스택: %s, 경력: %s
+            위 조건에 맞는 면접 질문 %d개를 생성하세요.
 
-            Generate practical interview questions appropriate for this candidate.
+            질문은 한국어로 작성하고 JSON 스키마에 맞게 반환하세요.
             """.formatted(
-            command.userId(),
-            command.interviewType(),
-            command.careerLevel(),
             command.jobPosition(),
-            command.companyName() == null ? "N/A" : command.companyName(),
             topics,
+            command.careerLevel(),
             command.questionCount()
         );
     }

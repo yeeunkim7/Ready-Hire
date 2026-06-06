@@ -110,7 +110,9 @@ class OpenAiChatServiceErrorTest {
             "Backend Developer",
             "DevView",
             5,
-            List.of("Java", "Spring")
+            List.of("Java", "Spring"),
+            "STANDARD",
+            null
         );
     }
 }

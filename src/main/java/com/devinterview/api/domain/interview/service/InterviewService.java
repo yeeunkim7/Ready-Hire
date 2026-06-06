@@ -17,6 +17,8 @@ import com.devinterview.api.domain.interview.dto.InterviewCompleteResponse;
 import com.devinterview.api.domain.interview.dto.InterviewStartRequest;
 import com.devinterview.api.domain.interview.dto.InterviewStartResponse;
 import com.devinterview.api.domain.interview.dto.InterviewSummaryDto;
+import com.devinterview.api.domain.interview.dto.PdfParseResponse;
+import com.devinterview.api.domain.interview.util.PdfTextExtractor;
 import com.devinterview.api.domain.interview.entity.InterviewAnswer;
 import com.devinterview.api.domain.interview.entity.Interview;
 import com.devinterview.api.domain.interview.entity.InterviewQuestion;
@@ -43,6 +45,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 면접 세션 시작/조회 비즈니스를 처리하는 서비스.
@@ -54,6 +57,8 @@ public class InterviewService {
 
     private static final int FREE_DAILY_LIMIT = 3;
     private static final int QUESTION_COUNT = 5;
+    private static final String MODE_STANDARD = "STANDARD";
+    private static final String MODE_JOB_POSTING = "JOB_POSTING";
 
     private final UserRepository userRepository;
     private final InterviewRepository interviewRepository;
@@ -63,11 +68,21 @@ public class InterviewService {
     private final DailyUsageRepository dailyUsageRepository;
     private final ChatService chatService;
     private final ObjectMapper objectMapper;
+    private final PdfTextExtractor pdfTextExtractor;
+
+    public PdfParseResponse parsePdf(MultipartFile file) {
+        String text = pdfTextExtractor.extract(file);
+        return new PdfParseResponse(text, text.length());
+    }
 
     @Transactional
     public InterviewStartResponse startInterview(Long userId, InterviewStartRequest request) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new CustomException(ErrorCode.AUTH_ERROR, "사용자를 찾을 수 없습니다."));
+
+        String interviewMode = resolveInterviewMode(request.getInterviewMode());
+        List<String> techStack = normalizeTechStack(request.getTechStack());
+        validateStartRequest(request, interviewMode, techStack);
 
         LocalDate today = LocalDate.now();
         DailyUsage dailyUsage = null;
@@ -90,7 +105,7 @@ public class InterviewService {
             Interview.builder()
                 .user(user)
                 .jobRole(request.getJobRole())
-                .techStack(request.getTechStack())
+                .techStack(techStack)
                 .experienceLevel(request.getExperienceLevel())
                 .status(InterviewSessionStatus.IN_PROGRESS)
                 .build()
@@ -106,9 +121,11 @@ public class InterviewService {
                     InterviewType.TECHNICAL,
                     parseCareerLevel(request.getExperienceLevel()),
                     request.getJobRole(),
-                    null,
+                    MODE_JOB_POSTING.equals(interviewMode) ? request.getExperienceLevel() : null,
                     QUESTION_COUNT,
-                    request.getTechStack()
+                    techStack,
+                    interviewMode,
+                    request.getJobPostingText()
                 )
             );
         } catch (CustomException ex) {
@@ -247,6 +264,41 @@ public class InterviewService {
     public InterviewCompleteResponse getInterviewDetail(Long userId, Long interviewId) {
         Interview interview = getOwnedInterviewOrThrow(userId, interviewId);
         return buildInterviewDetailResponse(userId, interview);
+    }
+
+    private String resolveInterviewMode(String mode) {
+        if (mode == null || mode.isBlank()) {
+            return MODE_STANDARD;
+        }
+        String normalized = mode.trim().toUpperCase();
+        if (!MODE_STANDARD.equals(normalized) && !MODE_JOB_POSTING.equals(normalized)) {
+            throw new CustomException(ErrorCode.VALIDATION_ERROR, "지원하지 않는 면접 모드입니다.");
+        }
+        return normalized;
+    }
+
+    private List<String> normalizeTechStack(List<String> techStack) {
+        if (techStack == null || techStack.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return techStack.stream()
+            .filter(item -> item != null && !item.isBlank())
+            .map(String::trim)
+            .distinct()
+            .limit(5)
+            .collect(Collectors.toList());
+    }
+
+    private void validateStartRequest(InterviewStartRequest request, String interviewMode, List<String> techStack) {
+        if (MODE_JOB_POSTING.equals(interviewMode)) {
+            if (request.getJobPostingText() == null || request.getJobPostingText().isBlank()) {
+                throw new CustomException(ErrorCode.VALIDATION_ERROR, "채용공고 텍스트가 필요합니다.");
+            }
+            return;
+        }
+        if (techStack.isEmpty()) {
+            throw new CustomException(ErrorCode.VALIDATION_ERROR, "기술스택을 1개 이상 선택해 주세요.");
+        }
     }
 
     private CareerLevel parseCareerLevel(String level) {
