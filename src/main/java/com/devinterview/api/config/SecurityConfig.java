@@ -4,11 +4,16 @@ import com.devinterview.api.auth.oauth2.CookieOAuth2AuthorizationRequestReposito
 import com.devinterview.api.auth.oauth2.CustomOAuth2UserService;
 import com.devinterview.api.auth.oauth2.OAuth2AuthenticationFailureHandler;
 import com.devinterview.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
+import com.devinterview.api.common.dto.ApiResponse;
+import com.devinterview.api.common.exception.ErrorCode;
 import com.devinterview.api.security.filter.JwtAuthenticationFilter;
 import com.devinterview.api.security.user.CustomUserDetailsService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -19,6 +24,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -31,12 +37,27 @@ public class SecurityConfig {
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     private final CookieOAuth2AuthorizationRequestRepository cookieOAuth2AuthorizationRequestRepository;
+    private final CorsConfigurationSource corsConfigurationSource;
+    private final ObjectMapper objectMapper;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
+                if (request.getRequestURI().startsWith("/api/")) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    ApiResponse<Void> body = ApiResponse.failure(
+                        "[" + ErrorCode.AUTH_ERROR.getCode() + "] " + ErrorCode.AUTH_ERROR.getDefaultMessage()
+                    );
+                    response.getWriter().write(objectMapper.writeValueAsString(body));
+                    return;
+                }
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            }))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                         "/api/auth/**",

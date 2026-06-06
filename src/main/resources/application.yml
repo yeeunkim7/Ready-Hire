@@ -55,6 +55,8 @@ openai:
   timeout-seconds: ${OPENAI_TIMEOUT_SECONDS:5}
 
 app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,https://ready-hire-vert.vercel.app}
   oauth2:
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/callback}
   subscription:
