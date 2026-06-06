@@ -59,6 +59,7 @@ public class InterviewService {
     private static final int QUESTION_COUNT = 5;
     private static final String MODE_STANDARD = "STANDARD";
     private static final String MODE_JOB_POSTING = "JOB_POSTING";
+    private static final String MODE_PORTFOLIO = "PORTFOLIO";
 
     private final UserRepository userRepository;
     private final InterviewRepository interviewRepository;
@@ -115,19 +116,28 @@ public class InterviewService {
 
         QuestionGenerationResult generationResult;
         try {
-            generationResult = chatService.generateQuestions(
-                new QuestionGenerationCommand(
-                    userId,
-                    InterviewType.TECHNICAL,
-                    parseCareerLevel(request.getExperienceLevel()),
+            if (MODE_PORTFOLIO.equals(interviewMode)) {
+                log.info("[Interview] PORTFOLIO mode started: userId={}, jobRole={}", userId, request.getJobRole());
+                generationResult = chatService.generateQuestionsFromPortfolio(
                     request.getJobRole(),
                     request.getExperienceLevel(),
-                    QUESTION_COUNT,
-                    techStack,
-                    interviewMode,
-                    request.getJobPostingText()
-                )
-            );
+                    request.getPortfolioText()
+                );
+            } else {
+                generationResult = chatService.generateQuestions(
+                    new QuestionGenerationCommand(
+                        userId,
+                        InterviewType.TECHNICAL,
+                        parseCareerLevel(request.getExperienceLevel()),
+                        request.getJobRole(),
+                        request.getExperienceLevel(),
+                        QUESTION_COUNT,
+                        techStack,
+                        interviewMode,
+                        request.getJobPostingText()
+                    )
+                );
+            }
         } catch (CustomException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -162,7 +172,8 @@ public class InterviewService {
             log.info("[Interview] FREE usage incremented: userId={}, date={}, used={}", userId, today, dailyUsage.getUsageCount());
         }
 
-        log.info("[Interview] Question generation completed: interviewId={}, questionCount={}", interview.getId(), questionDtos.size());
+        log.info("[Interview] Question generation completed: interviewId={}, mode={}, questionCount={}",
+            interview.getId(), interviewMode, questionDtos.size());
         return new InterviewStartResponse(interview.getId(), questionDtos);
     }
 
@@ -271,7 +282,9 @@ public class InterviewService {
             return MODE_STANDARD;
         }
         String normalized = mode.trim().toUpperCase();
-        if (!MODE_STANDARD.equals(normalized) && !MODE_JOB_POSTING.equals(normalized)) {
+        if (!MODE_STANDARD.equals(normalized)
+            && !MODE_JOB_POSTING.equals(normalized)
+            && !MODE_PORTFOLIO.equals(normalized)) {
             throw new CustomException(ErrorCode.VALIDATION_ERROR, "지원하지 않는 면접 모드입니다.");
         }
         return normalized;
@@ -293,6 +306,12 @@ public class InterviewService {
         if (MODE_JOB_POSTING.equals(interviewMode)) {
             if (request.getJobPostingText() == null || request.getJobPostingText().isBlank()) {
                 throw new CustomException(ErrorCode.VALIDATION_ERROR, "채용공고 텍스트가 필요합니다.");
+            }
+            return;
+        }
+        if (MODE_PORTFOLIO.equals(interviewMode)) {
+            if (request.getPortfolioText() == null || request.getPortfolioText().isBlank()) {
+                throw new CustomException(ErrorCode.PORTFOLIO_TEXT_REQUIRED);
             }
             return;
         }

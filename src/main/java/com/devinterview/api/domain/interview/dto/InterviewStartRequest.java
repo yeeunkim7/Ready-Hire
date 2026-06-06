@@ -27,6 +27,9 @@ public class InterviewStartRequest {
     /** PDF에서 추출한 채용공고 텍스트 (JOB_POSTING 모드) */
     private String jobPostingText;
 
-    /** STANDARD (기본) / JOB_POSTING (채용공고 기반) */
+    /** PDF에서 추출한 포트폴리오/이력서 텍스트 (PORTFOLIO 모드) */
+    private String portfolioText;
+
+    /** STANDARD (기본) / JOB_POSTING (채용공고 기반) / PORTFOLIO (포트폴리오 기반) */
     private String interviewMode;
 }

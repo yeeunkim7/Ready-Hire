@@ -8,7 +8,14 @@ import { useToast } from '../contexts/ToastContext.jsx'
 const INTERVIEW_MODES = {
   STANDARD: 'STANDARD',
   JOB_POSTING: 'JOB_POSTING',
+  PORTFOLIO: 'PORTFOLIO',
 }
+
+const MODE_TABS = [
+  { id: INTERVIEW_MODES.STANDARD, label: '기본 면접' },
+  { id: INTERVIEW_MODES.JOB_POSTING, label: '채용공고 맞춤 면접' },
+  { id: INTERVIEW_MODES.PORTFOLIO, label: '포트폴리오 맞춤 면접' },
+]
 
 const CATEGORY_ORDER = [
   '개발/IT',
@@ -61,8 +68,23 @@ const JOB_CATEGORIES = {
 
 const CAREER_LEVELS = ['신입', '1~3년', '3~5년', '5년 이상']
 
+const PDF_MODE_CONFIG = {
+  [INTERVIEW_MODES.JOB_POSTING]: {
+    title: '채용공고 PDF 업로드',
+    placeholder: 'PDF를 드래그하거나 클릭해서 업로드',
+    successPrefix: '채용공고 분석 완료',
+    missingMessage: '채용공고 PDF를 업로드해 주세요.',
+  },
+  [INTERVIEW_MODES.PORTFOLIO]: {
+    title: '포트폴리오 PDF 업로드',
+    placeholder: '이력서 또는 포트폴리오 PDF를 업로드하세요',
+    successPrefix: '포트폴리오 분석 완료',
+    missingMessage: '포트폴리오 PDF를 업로드해 주세요.',
+  },
+}
+
 /**
- * 면접 시작 전에 직무/기술스택/경력 또는 채용공고 PDF를 설정하는 페이지입니다.
+ * 면접 시작 전에 직무/기술스택/경력 또는 PDF 기반 맞춤 설정을 받는 페이지입니다.
  */
 function InterviewSetupPage() {
   const navigate = useNavigate()
@@ -76,6 +98,7 @@ function InterviewSetupPage() {
   const [careerLevel, setCareerLevel] = useState('신입')
   const [techStacks, setTechStacks] = useState(['Java', 'Spring'])
   const [jobPostingText, setJobPostingText] = useState('')
+  const [portfolioText, setPortfolioText] = useState('')
   const [pdfCharCount, setPdfCharCount] = useState(0)
   const [loading, setLoading] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
@@ -84,6 +107,9 @@ function InterviewSetupPage() {
   const currentCategory = JOB_CATEGORIES[category]
   const resolvedJobRole = category === '기타' ? customJobRole.trim() : jobRole
   const availableSkills = currentCategory.skills
+  const isPdfMode = interviewMode === INTERVIEW_MODES.JOB_POSTING || interviewMode === INTERVIEW_MODES.PORTFOLIO
+  const pdfConfig = PDF_MODE_CONFIG[interviewMode]
+  const pdfText = interviewMode === INTERVIEW_MODES.PORTFOLIO ? portfolioText : jobPostingText
 
   const handleCategoryChange = (nextCategory) => {
     setCategory(nextCategory)
@@ -95,6 +121,12 @@ function InterviewSetupPage() {
     }
     setJobRole(nextConfig.roles[0])
     setTechStacks(nextConfig.skills.slice(0, 2))
+  }
+
+  const handleModeChange = (nextMode) => {
+    setInterviewMode(nextMode)
+    setPdfCharCount(0)
+    setDragActive(false)
   }
 
   const toggleStack = (stack) => {
@@ -126,11 +158,20 @@ function InterviewSetupPage() {
       const data = await parsePdf(file)
       const text = data?.text ?? ''
       const charCount = data?.charCount ?? text.length
-      setJobPostingText(text)
+
+      if (interviewMode === INTERVIEW_MODES.PORTFOLIO) {
+        setPortfolioText(text)
+      } else {
+        setJobPostingText(text)
+      }
       setPdfCharCount(charCount)
-      showToast(`채용공고 분석 완료 (${charCount.toLocaleString()}자)`, 'success')
+      showToast(`${pdfConfig.successPrefix} (${charCount.toLocaleString()}자)`, 'success')
     } catch {
-      setJobPostingText('')
+      if (interviewMode === INTERVIEW_MODES.PORTFOLIO) {
+        setPortfolioText('')
+      } else {
+        setJobPostingText('')
+      }
       setPdfCharCount(0)
     } finally {
       setPdfLoading(false)
@@ -162,7 +203,12 @@ function InterviewSetupPage() {
     }
 
     if (interviewMode === INTERVIEW_MODES.JOB_POSTING && !jobPostingText) {
-      showToast('채용공고 PDF를 업로드해 주세요.', 'error')
+      showToast(PDF_MODE_CONFIG[INTERVIEW_MODES.JOB_POSTING].missingMessage, 'error')
+      return
+    }
+
+    if (interviewMode === INTERVIEW_MODES.PORTFOLIO && !portfolioText) {
+      showToast(PDF_MODE_CONFIG[INTERVIEW_MODES.PORTFOLIO].missingMessage, 'error')
       return
     }
 
@@ -178,6 +224,10 @@ function InterviewSetupPage() {
       if (interviewMode === INTERVIEW_MODES.JOB_POSTING) {
         payload.jobPostingText = jobPostingText
       }
+      if (interviewMode === INTERVIEW_MODES.PORTFOLIO) {
+        payload.portfolioText = portfolioText
+        payload.techStack = techStacks.length ? techStacks : []
+      }
 
       const data = await startInterview(payload)
       const interviewId = data?.interviewId
@@ -186,7 +236,8 @@ function InterviewSetupPage() {
       }
       const questions = data?.questions ?? []
       sessionStorage.setItem(`interview_questions_${interviewId}`, JSON.stringify(questions))
-      navigate(`/interview/${interviewId}`, { state: { questions } })
+      sessionStorage.setItem(`interview_mode_${interviewId}`, interviewMode)
+      navigate(`/interview/${interviewId}`, { state: { questions, interviewMode } })
     } catch {
       /* axios / unwrap 토스트 */
     } finally {
@@ -203,15 +254,12 @@ function InterviewSetupPage() {
 
           <div className="mt-6">
             <p className="mb-2 text-sm font-medium">면접 모드</p>
-            <div className="flex gap-2">
-              {[
-                { id: INTERVIEW_MODES.STANDARD, label: '기본 면접' },
-                { id: INTERVIEW_MODES.JOB_POSTING, label: '채용공고 맞춤 면접' },
-              ].map((mode) => (
+            <div className="flex flex-wrap gap-2">
+              {MODE_TABS.map((mode) => (
                 <button
                   key={mode.id}
                   type="button"
-                  onClick={() => setInterviewMode(mode.id)}
+                  onClick={() => handleModeChange(mode.id)}
                   className={`rounded-xl px-4 py-2 text-sm font-medium ${
                     interviewMode === mode.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700'
                   }`}
@@ -222,9 +270,9 @@ function InterviewSetupPage() {
             </div>
           </div>
 
-          {interviewMode === INTERVIEW_MODES.JOB_POSTING && (
+          {isPdfMode && pdfConfig && (
             <div className="mt-6">
-              <p className="mb-2 text-sm font-medium">채용공고 PDF 업로드</p>
+              <p className="mb-2 text-sm font-medium">{pdfConfig.title}</p>
               <div
                 role="button"
                 tabIndex={0}
@@ -240,12 +288,12 @@ function InterviewSetupPage() {
                   dragActive ? 'border-primary bg-indigo-50' : 'border-gray-200 bg-gray-50'
                 }`}
               >
-                <p className="text-sm font-medium text-gray-800">PDF를 드래그하거나 클릭해서 업로드</p>
+                <p className="text-sm font-medium text-gray-800">{pdfConfig.placeholder}</p>
                 <p className="mt-1 text-xs text-gray-500">최대 10MB · application/pdf</p>
                 {pdfLoading && <p className="mt-3 text-sm text-primary">PDF 분석 중...</p>}
-                {!pdfLoading && jobPostingText && (
+                {!pdfLoading && pdfText && (
                   <p className="mt-3 text-sm font-medium text-green-600">
-                    채용공고 분석 완료 ({pdfCharCount.toLocaleString()}자)
+                    {pdfConfig.successPrefix} ({pdfCharCount.toLocaleString()}자)
                   </p>
                 )}
               </div>
@@ -308,7 +356,8 @@ function InterviewSetupPage() {
 
             <div>
               <p className="mb-2 text-sm font-medium">
-                3. {interviewMode === INTERVIEW_MODES.JOB_POSTING ? '역량/툴 선택 (선택)' : '기술스택/역량 선택'}
+                3.{' '}
+                {isPdfMode ? '역량/툴 선택 (선택)' : '기술스택/역량 선택'}
               </p>
               <div className="flex flex-wrap gap-2">
                 {availableSkills.map((stack) => {

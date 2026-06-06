@@ -72,8 +72,10 @@ function InterviewPage() {
 
       if (currentIndex + 1 >= total) {
         await completeInterview(id)
+        const interviewMode =
+          location.state?.interviewMode ?? sessionStorage.getItem(`interview_mode_${id}`) ?? 'STANDARD'
         sessionStorage.removeItem(`interview_questions_${id}`)
-        navigate(`/interview/${id}/result`)
+        navigate(`/interview/${id}/result`, { state: { interviewMode } })
         return
       }
 

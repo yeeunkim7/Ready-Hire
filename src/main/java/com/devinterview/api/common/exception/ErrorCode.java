@@ -19,6 +19,7 @@ public enum ErrorCode {
     PDF_PARSE_ERROR(HttpStatus.BAD_REQUEST, "INTERVIEW_007", "PDF 파일 파싱에 실패했습니다."),
     PDF_TOO_LARGE(HttpStatus.BAD_REQUEST, "INTERVIEW_008", "PDF 파일이 너무 큽니다. (최대 10MB)"),
     PDF_INVALID_FORMAT(HttpStatus.BAD_REQUEST, "INTERVIEW_009", "유효하지 않은 PDF 파일입니다."),
+    PORTFOLIO_TEXT_REQUIRED(HttpStatus.BAD_REQUEST, "INTERVIEW_010", "포트폴리오 내용이 필요합니다."),
     AI_SERVICE_ERROR(HttpStatus.BAD_GATEWAY, "AI_001", "AI service call failed."),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "COMMON_001", "Invalid request."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_999", "Unexpected server error."),

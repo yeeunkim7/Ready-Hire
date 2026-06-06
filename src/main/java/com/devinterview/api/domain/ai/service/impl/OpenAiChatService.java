@@ -90,6 +90,35 @@ public class OpenAiChatService implements ChatService {
     }
 
     @Override
+    public QuestionGenerationResult generateQuestionsFromPortfolio(
+        String jobRole,
+        String experienceLevel,
+        String portfolioText
+    ) {
+        log.info("[AI] PORTFOLIO question generation started: jobRole={}, textLength={}",
+            jobRole, portfolioText == null ? 0 : portfolioText.length());
+
+        String userPrompt = buildPortfolioQuestionPrompt(jobRole, experienceLevel, portfolioText);
+        ChatCompletionResponse response = requestChatCompletion(QUESTION_SYSTEM_MESSAGE, userPrompt);
+
+        String content = extractContent(response);
+        List<String> questions = aiResponseParser.parseQuestions(content);
+
+        if (questions.isEmpty()) {
+            throw new CustomException(ErrorCode.AI_SERVICE_ERROR, "OpenAI portfolio question response parsing failed.");
+        }
+
+        log.info("[AI] PORTFOLIO question generation completed: questionCount={}", questions.size());
+
+        return new QuestionGenerationResult(
+            questions,
+            response.model(),
+            response.usage() == null ? 0 : response.usage().promptTokens(),
+            response.usage() == null ? 0 : response.usage().completionTokens()
+        );
+    }
+
+    @Override
     public AnswerAnalysisResult analyzeAnswer(AnswerAnalysisCommand command) {
         String userPrompt = buildAnswerAnalysisPrompt(command);
         ChatCompletionResponse response = requestChatCompletion(ANALYSIS_SYSTEM_MESSAGE, userPrompt);
@@ -164,6 +193,29 @@ public class OpenAiChatService implements ChatService {
             throw new CustomException(ErrorCode.AI_SERVICE_ERROR, "OpenAI response content is missing.");
         }
         return firstChoice.message().content();
+    }
+
+    private String buildPortfolioQuestionPrompt(String jobRole, String experienceLevel, String portfolioText) {
+        return """
+            당신은 경험 많은 면접관입니다.
+            아래는 지원자의 포트폴리오/이력서 내용입니다:
+            %s
+
+            지원 직무: %s
+            경력: %s
+
+            위 포트폴리오를 바탕으로 지원자의 실제 경험과 역량을
+            깊이 파악할 수 있는 면접 질문 5개를 생성하세요.
+
+            질문 유형:
+            - 프로젝트 경험 구체화 (STAR 기법 유도)
+            - 기술적 의사결정 이유
+            - 어려움 극복 경험
+            - 성과와 배운 점
+            - 향후 성장 방향
+
+            질문은 한국어로 작성하고 JSON 스키마에 맞게 반환하세요.
+            """.formatted(portfolioText, jobRole, experienceLevel);
     }
 
     private String buildQuestionPrompt(QuestionGenerationCommand command) {

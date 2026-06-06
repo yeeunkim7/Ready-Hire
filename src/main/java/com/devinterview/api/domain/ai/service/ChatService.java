@@ -9,5 +9,11 @@ public interface ChatService {
 
     QuestionGenerationResult generateQuestions(QuestionGenerationCommand command);
 
+    QuestionGenerationResult generateQuestionsFromPortfolio(
+        String jobRole,
+        String experienceLevel,
+        String portfolioText
+    );
+
     AnswerAnalysisResult analyzeAnswer(AnswerAnalysisCommand command);
 }

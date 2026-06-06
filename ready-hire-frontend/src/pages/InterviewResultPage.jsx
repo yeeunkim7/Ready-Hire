@@ -1,15 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getInterviewDetail } from '../api/interview.js'
 import Navbar from '../components/Navbar.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { getScoreColorClass } from '../utils/score.js'
+
+const INTERVIEW_MODE_LABELS = {
+  STANDARD: '기본 면접',
+  JOB_POSTING: '채용공고 맞춤 면접',
+  PORTFOLIO: '포트폴리오 맞춤 면접',
+}
 
 /**
  * 완료된 면접의 종합 결과와 질문별 피드백을 보여줍니다.
  */
 function InterviewResultPage() {
   const { id } = useParams()
+  const location = useLocation()
   const navigate = useNavigate()
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
@@ -32,6 +39,9 @@ function InterviewResultPage() {
 
   const questionResults = useMemo(() => result?.results ?? [], [result])
   const totalScore = result?.totalScore ?? 0
+  const interviewMode =
+    location.state?.interviewMode ?? sessionStorage.getItem(`interview_mode_${id}`) ?? 'STANDARD'
+  const modeLabel = INTERVIEW_MODE_LABELS[interviewMode] ?? INTERVIEW_MODE_LABELS.STANDARD
 
   if (loading) {
     return (
@@ -51,7 +61,10 @@ function InterviewResultPage() {
       <Navbar />
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
         <section className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm">
-          <p className="text-sm text-gray-500">전체 평균 점수</p>
+          <span className="inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-primary">
+            {modeLabel}
+          </span>
+          <p className="mt-4 text-sm text-gray-500">전체 평균 점수</p>
           <p className={`mt-2 text-5xl font-bold ${getScoreColorClass(totalScore)}`}>{totalScore}</p>
         </section>
 
