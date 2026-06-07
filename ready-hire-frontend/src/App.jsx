@@ -3,6 +3,7 @@ import PrivateRoute from './components/PrivateRoute.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import InterviewPage from './pages/InterviewPage.jsx'
 import InterviewResultPage from './pages/InterviewResultPage.jsx'
+import InterviewModeSelectPage from './pages/InterviewModeSelectPage.jsx'
 import InterviewSetupPage from './pages/InterviewSetupPage.jsx'
 import MyPage from './pages/MyPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
@@ -22,6 +23,14 @@ function App() {
         element={
           <PrivateRoute>
             <DashboardPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/interview/mode"
+        element={
+          <PrivateRoute>
+            <InterviewModeSelectPage />
           </PrivateRoute>
         }
       />

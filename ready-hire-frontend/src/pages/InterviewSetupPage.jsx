@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { SESSION_MODE_LABELS, SESSION_MODES, sessionModeStorageKey } from '../constants/interviewSession.js'
 import { parsePdf, startInterview } from '../api/interview.js'
 import ConfirmModal from '../components/ConfirmModal.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
@@ -91,8 +92,10 @@ const PDF_MODE_CONFIG = {
  * 면접 시작 전에 직무/기술스택/경력 또는 PDF 기반 맞춤 설정을 받는 페이지입니다.
  */
 function InterviewSetupPage() {
+  const location = useLocation()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const sessionMode = location.state?.sessionMode ?? SESSION_MODES.PRACTICE
   const { showToast } = useToast()
   const fileInputRef = useRef(null)
 
@@ -116,6 +119,12 @@ function InterviewSetupPage() {
   const [loading, setLoading] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
+
+  useEffect(() => {
+    if (!location.state?.sessionMode) {
+      navigate('/interview/mode', { replace: true })
+    }
+  }, [location.state?.sessionMode, navigate])
 
   const currentCategory = JOB_CATEGORIES[category]
   const resolvedJobRole = category === '기타' ? customJobRole.trim() : jobRole
@@ -259,7 +268,8 @@ function InterviewSetupPage() {
       const questions = data?.questions ?? []
       sessionStorage.setItem(`interview_questions_${interviewId}`, JSON.stringify(questions))
       sessionStorage.setItem(`interview_mode_${interviewId}`, interviewMode)
-      navigate(`/interview/${interviewId}`, { state: { questions, interviewMode } })
+      sessionStorage.setItem(sessionModeStorageKey(interviewId), sessionMode)
+      navigate(`/interview/${interviewId}`, { state: { questions, interviewMode, sessionMode } })
     } catch {
       /* axios / unwrap 토스트 */
     } finally {
@@ -272,7 +282,21 @@ function InterviewSetupPage() {
       <Navbar />
       <main className="mx-auto max-w-2xl space-y-6 px-4 py-6">
         <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h1 className="text-xl font-bold">면접 설정</h1>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-xl font-bold">면접 설정</h1>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-primary">
+                {SESSION_MODE_LABELS[sessionMode] ?? SESSION_MODE_LABELS[SESSION_MODES.PRACTICE]}
+              </span>
+              <button
+                type="button"
+                onClick={() => navigate('/interview/mode', { state: { sessionMode } })}
+                className="text-xs text-gray-500 underline"
+              >
+                모드 변경
+              </button>
+            </div>
+          </div>
 
           <div className="mt-6">
             <p className="mb-2 text-sm font-medium">면접 모드</p>
@@ -300,7 +324,7 @@ function InterviewSetupPage() {
               <div className="flex shrink-0 items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => navigate('/subscription')}
+                  onClick={() => navigate('/mypage#subscription')}
                   className="whitespace-nowrap text-sm font-semibold text-primary underline"
                 >
                   PRO 알아보기
@@ -463,7 +487,7 @@ function InterviewSetupPage() {
         cancelText="닫기"
         onConfirm={() => {
           setShowProModal(false)
-          navigate('/subscription')
+          navigate('/mypage#subscription')
         }}
         onCancel={() => setShowProModal(false)}
       />

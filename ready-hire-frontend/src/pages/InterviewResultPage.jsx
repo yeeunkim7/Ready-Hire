@@ -93,7 +93,7 @@ function InterviewResultPage() {
                   </ul>
                   <button
                     type="button"
-                    onClick={() => navigate('/subscription')}
+                    onClick={() => navigate('/mypage#subscription')}
                     className="mt-3 w-full rounded-xl bg-secondary px-4 py-2 font-medium text-white sm:w-auto"
                   >
                     PRO 업그레이드 →
@@ -105,7 +105,7 @@ function InterviewResultPage() {
         </section>
 
         <section className="flex flex-wrap gap-3">
-          <button type="button" onClick={() => navigate('/interview/setup')} className="rounded-xl bg-primary px-6 py-3 font-medium text-white">
+          <button type="button" onClick={() => navigate('/interview/mode')} className="rounded-xl bg-primary px-6 py-3 font-medium text-white">
             다시 면접하기
           </button>
           <button type="button" onClick={() => navigate('/dashboard')} className="rounded-xl border border-gray-200 bg-white px-6 py-3 font-medium">

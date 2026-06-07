@@ -46,7 +46,7 @@ function DashboardPage() {
       <Navbar />
       {isFree && (
         <div className="sticky top-0 z-40 border-b border-amber-200 bg-amber-100 px-4 py-3 text-center text-sm text-amber-900">
-          <button type="button" className="font-semibold underline" onClick={() => navigate('/subscription')}>
+          <button type="button" className="font-semibold underline" onClick={() => navigate('/mypage#subscription')}>
             PRO로 업그레이드
           </button>
           <span className="hidden sm:inline"> — 무제한 면접과 상세 AI 피드백을 이용해 보세요.</span>
@@ -66,7 +66,7 @@ function DashboardPage() {
           )}
           <button
             type="button"
-            onClick={() => navigate('/interview/setup')}
+            onClick={() => navigate('/interview/mode')}
             className="mt-4 rounded-xl bg-primary px-6 py-3 font-medium text-white"
           >
             새 면접 시작
@@ -105,7 +105,7 @@ function DashboardPage() {
                   <p>📋 최근 3건만 표시됩니다. 전체 히스토리는 PRO 플랜에서 확인하세요.</p>
                   <button
                     type="button"
-                    onClick={() => navigate('/subscription')}
+                    onClick={() => navigate('/mypage#subscription')}
                     className="mt-2 font-semibold text-primary underline"
                   >
                     PRO 업그레이드 →

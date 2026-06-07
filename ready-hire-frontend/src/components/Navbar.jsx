@@ -23,9 +23,6 @@ function Navbar() {
         <div className="flex items-center gap-3">
           <p className="hidden text-sm text-gray-600 sm:block">{user?.email}</p>
           <PlanBadge planType={user?.planType} />
-          <button type="button" onClick={() => navigate('/subscription')} className="text-sm text-primary underline">
-            구독 관리
-          </button>
           <button type="button" onClick={() => navigate('/mypage')} className="text-sm text-gray-600 underline">
             마이페이지
           </button>

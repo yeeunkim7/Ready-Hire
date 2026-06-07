@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { getMyInterviews, getMyPage, updateMyProfile, withdrawAccount } from '../api/user.js'
 import ConfirmModal from '../components/ConfirmModal.jsx'
 import Navbar from '../components/Navbar.jsx'
 import PlanBadge from '../components/PlanBadge.jsx'
+import SubscriptionSection from '../components/SubscriptionSection.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useToast } from '../contexts/ToastContext.jsx'
 import { getRefreshToken } from '../utils/token.js'
 
 function MyPage() {
+  const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const { showToast } = useToast()
@@ -50,6 +52,12 @@ function MyPage() {
     }
     init()
   }, [loadMyPage, loadHistory])
+
+  useEffect(() => {
+    if (location.hash === '#subscription') {
+      document.getElementById('subscription')?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [location.hash, loading])
 
   const handlePasswordUpdate = async (event) => {
     event.preventDefault()
@@ -112,6 +120,8 @@ function MyPage() {
                 <PlanBadge planType={planType} />
               </div>
             </section>
+
+            <SubscriptionSection />
 
             {isLocal && (
               <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
