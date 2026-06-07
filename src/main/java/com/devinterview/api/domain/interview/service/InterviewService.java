@@ -89,7 +89,7 @@ public class InterviewService {
         DailyUsage dailyUsage = null;
 
         if (user.getPlanType() == PlanType.FREE) {
-            dailyUsage = dailyUsageRepository.findByUserIdAndUsageDate(userId, today)
+            dailyUsage = dailyUsageRepository.findByUser_IdAndUsageDate(userId, today)
                 .orElseGet(() -> DailyUsage.builder()
                     .user(user)
                     .usageDate(today)
@@ -97,7 +97,8 @@ public class InterviewService {
                     .build());
 
             log.info("[Interview] FREE usage check: userId={}, date={}, used={}", userId, today, dailyUsage.getUsageCount());
-            if (dailyUsage.getUsageCount() >= FREE_DAILY_LIMIT) {
+            int usedCount = dailyUsage.getUsageCount() == null ? 0 : dailyUsage.getUsageCount();
+            if (usedCount >= FREE_DAILY_LIMIT) {
                 throw new CustomException(ErrorCode.DAILY_LIMIT_EXCEEDED);
             }
         }
@@ -106,7 +107,7 @@ public class InterviewService {
             Interview.builder()
                 .user(user)
                 .jobRole(request.getJobRole())
-                .techStack(techStack)
+                .techStack(techStack.isEmpty() ? null : techStack)
                 .experienceLevel(request.getExperienceLevel())
                 .status(InterviewSessionStatus.IN_PROGRESS)
                 .build()
@@ -141,6 +142,7 @@ public class InterviewService {
         } catch (CustomException ex) {
             throw ex;
         } catch (Exception ex) {
+            log.error("[Interview] Question generation failed: mode={}, userId={}", interviewMode, userId, ex);
             throw new CustomException(ErrorCode.QUESTION_GENERATION_FAILED, ex.getMessage());
         }
 
@@ -167,7 +169,8 @@ public class InterviewService {
         }
 
         if (user.getPlanType() == PlanType.FREE) {
-            dailyUsage.setUsageCount(dailyUsage.getUsageCount() + 1);
+            int currentCount = dailyUsage.getUsageCount() == null ? 0 : dailyUsage.getUsageCount();
+            dailyUsage.setUsageCount(currentCount + 1);
             dailyUsageRepository.save(dailyUsage);
             log.info("[Interview] FREE usage incremented: userId={}, date={}, used={}", userId, today, dailyUsage.getUsageCount());
         }
@@ -179,7 +182,7 @@ public class InterviewService {
 
     @Transactional(readOnly = true)
     public List<InterviewSummaryDto> getHistory(Long userId) {
-        return interviewRepository.findByUserIdOrderByCreatedAtDesc(userId)
+        return interviewRepository.findByUser_IdOrderByCreatedAtDesc(userId)
             .stream()
             .map(InterviewSummaryDto::from)
             .collect(Collectors.toList());

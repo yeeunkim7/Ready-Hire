@@ -195,6 +195,13 @@ public class OpenAiChatService implements ChatService {
         return firstChoice.message().content();
     }
 
+    private String sanitizeFormatArg(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("%", "%%");
+    }
+
     private String buildPortfolioQuestionPrompt(String jobRole, String experienceLevel, String portfolioText) {
         return """
             당신은 경험 많은 면접관입니다.
@@ -215,7 +222,7 @@ public class OpenAiChatService implements ChatService {
             - 향후 성장 방향
 
             질문은 한국어로 작성하고 JSON 스키마에 맞게 반환하세요.
-            """.formatted(portfolioText, jobRole, experienceLevel);
+            """.formatted(sanitizeFormatArg(portfolioText), sanitizeFormatArg(jobRole), sanitizeFormatArg(experienceLevel));
     }
 
     private String buildQuestionPrompt(QuestionGenerationCommand command) {
@@ -231,10 +238,10 @@ public class OpenAiChatService implements ChatService {
 
                 질문은 한국어로 작성하고 JSON 스키마에 맞게 반환하세요.
                 """.formatted(
-                command.jobPostingText(),
-                command.companyName() != null ? command.companyName() : command.careerLevel().name(),
+                sanitizeFormatArg(command.jobPostingText()),
+                sanitizeFormatArg(command.companyName() != null ? command.companyName() : command.careerLevel().name()),
                 command.questionCount(),
-                command.jobPosition()
+                sanitizeFormatArg(command.jobPosition())
             );
         }
 
@@ -249,9 +256,9 @@ public class OpenAiChatService implements ChatService {
 
             질문은 한국어로 작성하고 JSON 스키마에 맞게 반환하세요.
             """.formatted(
-            command.jobPosition(),
-            topics,
-            command.companyName() != null ? command.companyName() : command.careerLevel().name(),
+            sanitizeFormatArg(command.jobPosition()),
+            sanitizeFormatArg(topics),
+            sanitizeFormatArg(command.companyName() != null ? command.companyName() : command.careerLevel().name()),
             command.questionCount()
         );
     }

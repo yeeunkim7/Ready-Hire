@@ -13,6 +13,7 @@ spring:
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
     hikari:
+      maximum-pool-size: 5
       connection-init-sql: "SELECT 1"
       data-source-properties:
         # TLS는 DB_URL의 sslmode=require만 사용 (ssl 속성과 동시 사용 시 08P01)
@@ -57,7 +58,7 @@ openai:
     key: ${OPENAI_API_KEY:}
   model: ${OPENAI_MODEL:gpt-4o-mini}
   base-url: ${OPENAI_BASE_URL:https://api.openai.com}
-  timeout-seconds: ${OPENAI_TIMEOUT_SECONDS:5}
+  timeout-seconds: ${OPENAI_TIMEOUT_SECONDS:60}
 
 app:
   cors:
