@@ -39,6 +39,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserService {
 
+    private static final int FREE_HISTORY_LIMIT = 3;
+
     private final UserRepository userRepository;
     private final InterviewRepository interviewRepository;
     private final InterviewResultRepository interviewResultRepository;
@@ -50,12 +52,14 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public MyPageResponse getMyPage(Long userId) {
-        User user = getActiveUser(userId);
-        subscriptionPlanSyncService.syncUserPlan(userId);
+        User user = subscriptionPlanSyncService.syncUserPlan(userId);
+        getActiveUser(userId);
 
-        List<InterviewHistoryResponse> recent = interviewRepository
-            .findTop5ByUser_IdOrderByCreatedAtDesc(userId)
-            .stream()
+        List<Interview> recentInterviews = user.getPlanType() == PlanType.PRO
+            ? interviewRepository.findTop5ByUser_IdOrderByCreatedAtDesc(userId)
+            : interviewRepository.findTop3ByUser_IdOrderByCreatedAtDesc(userId);
+
+        List<InterviewHistoryResponse> recent = recentInterviews.stream()
             .map(this::toHistoryResponse)
             .collect(Collectors.toList());
 
@@ -109,25 +113,51 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public InterviewHistoryPageResponse getInterviewHistory(Long userId, int page, int size) {
+        User user = subscriptionPlanSyncService.syncUserPlan(userId);
         getActiveUser(userId);
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 50);
 
-        Page<Interview> interviewPage = interviewRepository.findByUser_IdOrderByCreatedAtDesc(
-            userId,
-            PageRequest.of(safePage, safeSize)
-        );
+        if (user.getPlanType() == PlanType.PRO) {
+            Page<Interview> interviewPage = interviewRepository.findByUser_IdOrderByCreatedAtDesc(
+                userId,
+                PageRequest.of(safePage, safeSize)
+            );
 
-        List<InterviewHistoryResponse> content = interviewPage.getContent().stream()
-            .map(this::toHistoryResponse)
-            .collect(Collectors.toList());
+            List<InterviewHistoryResponse> content = interviewPage.getContent().stream()
+                .map(this::toHistoryResponse)
+                .collect(Collectors.toList());
+
+            return InterviewHistoryPageResponse.builder()
+                .content(content)
+                .page(interviewPage.getNumber())
+                .size(interviewPage.getSize())
+                .totalElements(interviewPage.getTotalElements())
+                .totalPages(interviewPage.getTotalPages())
+                .build();
+        }
+
+        long totalElements = Math.min(interviewRepository.countByUser_Id(userId), FREE_HISTORY_LIMIT);
+        int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / safeSize);
+        int fromIndex = safePage * safeSize;
+
+        List<InterviewHistoryResponse> content;
+        if (fromIndex >= totalElements) {
+            content = Collections.emptyList();
+        } else {
+            List<Interview> visible = interviewRepository.findTop3ByUser_IdOrderByCreatedAtDesc(userId);
+            int toIndex = Math.min(fromIndex + safeSize, visible.size());
+            content = visible.subList(fromIndex, toIndex).stream()
+                .map(this::toHistoryResponse)
+                .collect(Collectors.toList());
+        }
 
         return InterviewHistoryPageResponse.builder()
             .content(content)
-            .page(interviewPage.getNumber())
-            .size(interviewPage.getSize())
-            .totalElements(interviewPage.getTotalElements())
-            .totalPages(interviewPage.getTotalPages())
+            .page(safePage)
+            .size(safeSize)
+            .totalElements(totalElements)
+            .totalPages(totalPages)
             .build();
     }
 

@@ -12,5 +12,9 @@ public interface InterviewRepository extends JpaRepository<Interview, Long> {
 
     List<Interview> findTop5ByUser_IdOrderByCreatedAtDesc(Long userId);
 
+    List<Interview> findTop3ByUser_IdOrderByCreatedAtDesc(Long userId);
+
+    long countByUser_Id(Long userId);
+
     Page<Interview> findByUser_IdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 }
