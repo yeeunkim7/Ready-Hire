@@ -1,5 +1,8 @@
 package com.devinterview.api.config;
 
+import com.devinterview.api.auth.filter.JsonUsernamePasswordAuthenticationFilter;
+import com.devinterview.api.auth.handler.JwtLoginFailureHandler;
+import com.devinterview.api.auth.handler.JwtLoginSuccessHandler;
 import com.devinterview.api.auth.oauth2.CookieOAuth2AuthorizationRequestRepository;
 import com.devinterview.api.auth.oauth2.CustomOAuth2UserService;
 import com.devinterview.api.auth.oauth2.OAuth2AuthenticationFailureHandler;
@@ -42,12 +45,22 @@ public class SecurityConfig {
     private final CookieOAuth2AuthorizationRequestRepository cookieOAuth2AuthorizationRequestRepository;
     private final CorsConfigurationSource corsConfigurationSource;
     private final ObjectMapper objectMapper;
+    private final JwtLoginSuccessHandler jwtLoginSuccessHandler;
+    private final JwtLoginFailureHandler jwtLoginFailureHandler;
 
     @Value("${app.swagger.enabled:true}")
     private boolean swaggerEnabled;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+        HttpSecurity http,
+        AuthenticationManager authenticationManager
+    ) throws Exception {
+        JsonUsernamePasswordAuthenticationFilter loginFilter =
+            new JsonUsernamePasswordAuthenticationFilter(objectMapper);
+        loginFilter.setAuthenticationManager(authenticationManager);
+        loginFilter.setAuthenticationSuccessHandler(jwtLoginSuccessHandler);
+        loginFilter.setAuthenticationFailureHandler(jwtLoginFailureHandler);
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .csrf(csrf -> csrf.disable())
@@ -66,7 +79,10 @@ public class SecurityConfig {
             }))
             .authorizeHttpRequests(auth -> {
                 List<String> publicPaths = new ArrayList<>(List.of(
-                    "/api/auth/**",
+                    "/api/auth/signup",
+                    "/api/auth/login",
+                    "/api/auth/refresh",
+                    "/api/auth/logout",
                     "/api/health",
                     "/api/health/**",
                     "/api/payments/webhook",
@@ -89,7 +105,8 @@ public class SecurityConfig {
                 .failureHandler(oAuth2AuthenticationFailureHandler)
             )
             .authenticationProvider(daoAuthenticationProvider())
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(jwtAuthenticationFilter, JsonUsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

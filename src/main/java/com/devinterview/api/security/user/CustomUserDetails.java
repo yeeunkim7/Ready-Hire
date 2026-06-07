@@ -1,6 +1,7 @@
 package com.devinterview.api.security.user;
 
 import com.devinterview.api.domain.entity.User;
+import com.devinterview.api.domain.enums.AccountStatus;
 import java.util.Collection;
 import java.util.List;
 import lombok.Getter;
@@ -16,6 +17,7 @@ public class CustomUserDetails implements UserDetails {
     private final String password;
     private final String role;
     private final String planType;
+    private final AccountStatus accountStatus;
 
     public CustomUserDetails(User user) {
         this.userId = user.getId();
@@ -23,6 +25,7 @@ public class CustomUserDetails implements UserDetails {
         this.password = user.getPasswordHash() == null ? "" : user.getPasswordHash();
         this.role = user.getRole().name();
         this.planType = user.getPlanType().name();
+        this.accountStatus = user.getAccountStatus();
     }
 
     @Override
@@ -57,6 +60,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return accountStatus == AccountStatus.ACTIVE;
     }
 }

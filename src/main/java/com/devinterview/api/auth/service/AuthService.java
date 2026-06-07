@@ -1,29 +1,40 @@
 package com.devinterview.api.auth.service;
 
 import com.devinterview.api.auth.dto.AuthTokenResponse;
-import com.devinterview.api.auth.dto.LoginRequest;
+import com.devinterview.api.auth.dto.SignupRequest;
+import com.devinterview.api.auth.dto.SignupResponse;
 import com.devinterview.api.auth.entity.UserRefreshToken;
 import com.devinterview.api.auth.exception.AuthException;
 import com.devinterview.api.auth.repository.UserRefreshTokenRepository;
+import com.devinterview.api.common.exception.CustomException;
+import com.devinterview.api.common.exception.ErrorCode;
 import com.devinterview.api.domain.entity.User;
+import com.devinterview.api.domain.enums.AccountStatus;
+import com.devinterview.api.domain.enums.PlanType;
 import com.devinterview.api.domain.enums.Provider;
+import com.devinterview.api.domain.enums.Role;
+import com.devinterview.api.domain.enums.SubscriptionStatus;
+import com.devinterview.api.domain.payment.repository.SubscriptionRepository;
 import com.devinterview.api.domain.repository.UserRepository;
 import com.devinterview.api.security.jwt.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
     private final UserRefreshTokenRepository userRefreshTokenRepository;
+    private final SubscriptionRepository subscriptionRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -31,12 +42,37 @@ public class AuthService {
     private long accessTokenExpirationSeconds;
 
     @Transactional
-    public AuthTokenResponse login(LoginRequest request) {
-        User user = userRepository.findByEmailAndProvider(request.email(), Provider.LOCAL)
-            .orElseThrow(() -> new AuthException("Invalid email or password."));
+    public SignupResponse signup(SignupRequest request) {
+        String email = request.email().trim().toLowerCase();
 
-        if (user.getPasswordHash() == null || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            throw new AuthException("Invalid email or password.");
+        if (!request.password().equals(request.passwordConfirm())) {
+            throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
+        }
+
+        if (userRepository.existsByEmailAndProvider(email, Provider.LOCAL)) {
+            throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        }
+
+        User user = userRepository.save(
+            User.builder()
+                .email(email)
+                .passwordHash(passwordEncoder.encode(request.password()))
+                .provider(Provider.LOCAL)
+                .role(Role.USER)
+                .accountStatus(AccountStatus.ACTIVE)
+                .planType(PlanType.FREE)
+                .build()
+        );
+
+        log.info("[Auth] LOCAL signup completed: userId={}, email={}", user.getId(), email);
+
+        return new SignupResponse(user.getId(), user.getEmail(), user.getPlanType().name());
+    }
+
+    @Transactional
+    public AuthTokenResponse issueTokens(User user) {
+        if (user.getAccountStatus() == AccountStatus.WITHDRAWN) {
+            throw new CustomException(ErrorCode.ACCOUNT_WITHDRAWN);
         }
 
         String accessToken = jwtTokenProvider.createAccessToken(
@@ -74,6 +110,10 @@ public class AuthService {
         }
 
         User user = saved.getUser();
+        if (user.getAccountStatus() == AccountStatus.WITHDRAWN) {
+            saved.setRevoked(true);
+            throw new CustomException(ErrorCode.ACCOUNT_WITHDRAWN);
+        }
 
         String newAccessToken = jwtTokenProvider.createAccessToken(
             user.getId(),
@@ -92,9 +132,29 @@ public class AuthService {
 
     @Transactional
     public void logout(String refreshToken) {
-        userRefreshTokenRepository.findByRefreshToken(refreshToken).ifPresent(token -> {
-            token.setRevoked(true);
-        });
+        userRefreshTokenRepository.findByRefreshToken(refreshToken).ifPresent(token -> token.setRevoked(true));
+    }
+
+    @Transactional
+    public void withdraw(Long userId, String refreshToken) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getAccountStatus() == AccountStatus.WITHDRAWN) {
+            throw new CustomException(ErrorCode.ACCOUNT_WITHDRAWN);
+        }
+
+        subscriptionRepository.findByUser_IdAndStatus(userId, SubscriptionStatus.ACTIVE)
+            .ifPresent(subscription -> subscription.setStatus(SubscriptionStatus.CANCELLED));
+
+        user.setAccountStatus(AccountStatus.WITHDRAWN);
+        user.setPlanType(PlanType.FREE);
+        user.setPasswordHash(null);
+
+        userRefreshTokenRepository.findByRefreshToken(refreshToken).ifPresent(token -> token.setRevoked(true));
+        userRefreshTokenRepository.findByUserId(userId).ifPresent(token -> token.setRevoked(true));
+
+        log.info("[Auth] Account withdrawn: userId={}, provider={}", userId, user.getProvider());
     }
 
     private void upsertRefreshToken(User user, String refreshToken) {

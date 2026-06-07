@@ -4,7 +4,9 @@ import DashboardPage from './pages/DashboardPage.jsx'
 import InterviewPage from './pages/InterviewPage.jsx'
 import InterviewResultPage from './pages/InterviewResultPage.jsx'
 import InterviewSetupPage from './pages/InterviewSetupPage.jsx'
+import AccountPage from './pages/AccountPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
+import SignupPage from './pages/SignupPage.jsx'
 import OAuth2CallbackPage from './pages/OAuth2CallbackPage.jsx'
 import SubscriptionPage from './pages/SubscriptionPage.jsx'
 
@@ -13,6 +15,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
       <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
       <Route
         path="/dashboard"
@@ -43,6 +46,14 @@ function App() {
         element={
           <PrivateRoute>
             <InterviewResultPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/account"
+        element={
+          <PrivateRoute>
+            <AccountPage />
           </PrivateRoute>
         }
       />

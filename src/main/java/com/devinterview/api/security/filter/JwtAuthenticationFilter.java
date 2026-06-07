@@ -1,6 +1,7 @@
 package com.devinterview.api.security.filter;
 
 import com.devinterview.api.common.dto.ApiResponse;
+import com.devinterview.api.common.exception.CustomException;
 import com.devinterview.api.common.exception.ErrorCode;
 import com.devinterview.api.security.jwt.JwtTokenProvider;
 import com.devinterview.api.security.user.CustomUserDetails;
@@ -68,14 +69,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (JwtException ex) {
             SecurityContextHolder.clearContext();
             writeError(response, ErrorCode.TOKEN_INVALID);
+        } catch (CustomException ex) {
+            SecurityContextHolder.clearContext();
+            writeError(response, ex.getErrorCode(), ex.getMessage());
         }
     }
 
     private void writeError(HttpServletResponse response, ErrorCode errorCode) throws IOException {
+        writeError(response, errorCode, errorCode.getDefaultMessage());
+    }
+
+    private void writeError(HttpServletResponse response, ErrorCode errorCode, String message) throws IOException {
         response.setStatus(errorCode.getHttpStatus().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-        ApiResponse<Void> body = ApiResponse.failure("[" + errorCode.getCode() + "] " + errorCode.getDefaultMessage());
+        ApiResponse<Void> body = ApiResponse.failure("[" + errorCode.getCode() + "] " + message);
         response.getWriter().write(objectMapper.writeValueAsString(body));
     }
 }
