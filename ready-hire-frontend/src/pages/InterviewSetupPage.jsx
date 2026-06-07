@@ -250,6 +250,7 @@ function InterviewSetupPage() {
         techStack: techStacks,
         experienceLevel: careerLevel,
         interviewMode,
+        sessionMode,
       }
 
       if (interviewMode === INTERVIEW_MODES.JOB_POSTING) {
@@ -269,7 +270,15 @@ function InterviewSetupPage() {
       sessionStorage.setItem(`interview_questions_${interviewId}`, JSON.stringify(questions))
       sessionStorage.setItem(`interview_mode_${interviewId}`, interviewMode)
       sessionStorage.setItem(sessionModeStorageKey(interviewId), sessionMode)
-      navigate(`/interview/${interviewId}`, { state: { questions, interviewMode, sessionMode } })
+      navigate(`/interview/${interviewId}`, {
+        state: {
+          questions,
+          interviewMode,
+          sessionMode,
+          questionStartedAt: data?.questionStartedAt,
+          timeLimitSeconds: data?.timeLimitSeconds,
+        },
+      })
     } catch {
       /* axios / unwrap 토스트 */
     } finally {

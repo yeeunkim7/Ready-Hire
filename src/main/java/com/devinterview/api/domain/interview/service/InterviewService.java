@@ -11,6 +11,7 @@ import com.devinterview.api.domain.entity.User;
 import com.devinterview.api.domain.enums.CareerLevel;
 import com.devinterview.api.domain.enums.InterviewType;
 import com.devinterview.api.domain.enums.PlanType;
+import com.devinterview.api.domain.enums.SessionMode;
 import com.devinterview.api.domain.interview.dto.AnswerSubmitRequest;
 import com.devinterview.api.domain.interview.dto.AnswerSubmitResponse;
 import com.devinterview.api.domain.interview.dto.InterviewCompleteResponse;
@@ -35,7 +36,10 @@ import com.devinterview.api.domain.usage.repository.DailyUsageRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -61,6 +65,9 @@ public class InterviewService {
     private static final String MODE_STANDARD = "STANDARD";
     private static final String MODE_JOB_POSTING = "JOB_POSTING";
     private static final String MODE_PORTFOLIO = "PORTFOLIO";
+    private static final int EXAM_SECONDS_PER_QUESTION = 90;
+    private static final int EXAM_GRACE_SECONDS = 5;
+    private static final String TIMEOUT_ANSWER_PLACEHOLDER = "시간 초과로 답변을 제출하지 못했습니다.";
 
     private final UserRepository userRepository;
     private final InterviewRepository interviewRepository;
@@ -88,6 +95,7 @@ public class InterviewService {
         User user = subscriptionPlanSyncService.syncUserPlan(userId);
 
         String interviewMode = resolveInterviewMode(request.getInterviewMode());
+        SessionMode sessionMode = resolveSessionMode(request.getSessionMode());
         List<String> techStack = normalizeTechStack(request.getTechStack());
         validateStartRequest(request, interviewMode, techStack);
 
@@ -115,6 +123,7 @@ public class InterviewService {
             }
         }
 
+        LocalDateTime questionStartedAt = LocalDateTime.now(ZoneOffset.UTC);
         Interview interview = interviewRepository.save(
             Interview.builder()
                 .user(user)
@@ -122,6 +131,9 @@ public class InterviewService {
                 .techStack(techStack.isEmpty() ? null : techStack)
                 .experienceLevel(request.getExperienceLevel())
                 .status(InterviewSessionStatus.IN_PROGRESS)
+                .sessionMode(sessionMode)
+                .interviewMode(interviewMode)
+                .currentQuestionStartedAt(questionStartedAt)
                 .build()
         );
 
@@ -187,9 +199,16 @@ public class InterviewService {
             log.info("[Interview] FREE usage incremented: userId={}, date={}, used={}", userId, today, dailyUsage.getUsageCount());
         }
 
-        log.info("[Interview] Question generation completed: interviewId={}, mode={}, questionCount={}",
-            interview.getId(), interviewMode, questionDtos.size());
-        return new InterviewStartResponse(interview.getId(), questionDtos);
+        log.info("[Interview] Question generation completed: interviewId={}, mode={}, sessionMode={}, questionCount={}",
+            interview.getId(), interviewMode, sessionMode, questionDtos.size());
+        return new InterviewStartResponse(
+            interview.getId(),
+            questionDtos,
+            sessionMode.name(),
+            interviewMode,
+            resolveTimeLimitSeconds(sessionMode),
+            questionStartedAt
+        );
     }
 
     @Transactional(readOnly = true)
@@ -227,13 +246,33 @@ public class InterviewService {
             throw new CustomException(ErrorCode.INTERVIEW_NOT_FOUND, "면접에 속하지 않는 질문입니다.");
         }
 
+        if (interviewAnswerRepository.existsByInterviewIdAndQuestionId(interviewId, question.getId())) {
+            throw new CustomException(ErrorCode.ANSWER_ALREADY_SUBMITTED);
+        }
+
+        List<InterviewQuestion> orderedQuestions =
+            interviewQuestionRepository.findByInterviewIdOrderByQuestionOrder(interviewId);
+        long answeredCount = interviewAnswerRepository.countByInterviewId(interviewId);
+        if (answeredCount >= orderedQuestions.size()) {
+            throw new CustomException(ErrorCode.INTERVIEW_ALREADY_COMPLETED);
+        }
+        InterviewQuestion expectedQuestion = orderedQuestions.get((int) answeredCount);
+        if (!expectedQuestion.getId().equals(question.getId())) {
+            throw new CustomException(ErrorCode.QUESTION_ORDER_INVALID);
+        }
+
+        String answerContent = validateAndResolveAnswerContent(interview, request.getContent());
+
         InterviewAnswer answer = interviewAnswerRepository.save(
             InterviewAnswer.builder()
                 .interview(interview)
                 .question(question)
-                .content(request.getContent())
+                .content(answerContent)
                 .build()
         );
+
+        interview.setCurrentQuestionStartedAt(LocalDateTime.now(ZoneOffset.UTC));
+        interviewRepository.save(interview);
         log.info("[Interview] Answer submitted: interviewId={}, questionId={}, answerId={}", interviewId, question.getId(), answer.getId());
 
         AnswerAnalysisResult analysisResult;
@@ -245,7 +284,7 @@ public class InterviewService {
                     interviewId,
                     question.getId(),
                     question.getContent(),
-                    request.getContent(),
+                    answerContent,
                     "Technical depth, clarity, and problem-solving ability"
                 )
             );
@@ -314,6 +353,51 @@ public class InterviewService {
         return normalized;
     }
 
+    private SessionMode resolveSessionMode(String mode) {
+        if (mode == null || mode.isBlank()) {
+            return SessionMode.PRACTICE;
+        }
+        String normalized = mode.trim().toUpperCase();
+        return switch (normalized) {
+            case "PRACTICE" -> SessionMode.PRACTICE;
+            case "EXAM" -> SessionMode.EXAM;
+            default -> throw new CustomException(ErrorCode.VALIDATION_ERROR, "지원하지 않는 세션 모드입니다.");
+        };
+    }
+
+    private Integer resolveTimeLimitSeconds(SessionMode sessionMode) {
+        return sessionMode == SessionMode.EXAM ? EXAM_SECONDS_PER_QUESTION : null;
+    }
+
+    private String validateAndResolveAnswerContent(Interview interview, String rawContent) {
+        String content = rawContent == null ? "" : rawContent.trim();
+        if (content.isBlank()) {
+            throw new CustomException(ErrorCode.VALIDATION_ERROR, "답변 내용이 필요합니다.");
+        }
+
+        if (interview.getSessionMode() != SessionMode.EXAM) {
+            return content;
+        }
+
+        LocalDateTime startedAt = interview.getCurrentQuestionStartedAt();
+        if (startedAt == null) {
+            return content;
+        }
+
+        long elapsedSeconds = Duration.between(startedAt, LocalDateTime.now(ZoneOffset.UTC)).getSeconds();
+        long maxAllowed = EXAM_SECONDS_PER_QUESTION + EXAM_GRACE_SECONDS;
+
+        if (elapsedSeconds > maxAllowed && !TIMEOUT_ANSWER_PLACEHOLDER.equals(content)) {
+            throw new CustomException(ErrorCode.ANSWER_TIME_EXCEEDED);
+        }
+
+        if (elapsedSeconds > EXAM_SECONDS_PER_QUESTION && TIMEOUT_ANSWER_PLACEHOLDER.equals(content)) {
+            return TIMEOUT_ANSWER_PLACEHOLDER;
+        }
+
+        return content;
+    }
+
     private List<String> normalizeTechStack(List<String> techStack) {
         if (techStack == null || techStack.isEmpty()) {
             return Collections.emptyList();
@@ -375,6 +459,18 @@ public class InterviewService {
     private InterviewCompleteResponse buildInterviewDetailResponse(Long userId, Interview interview) {
         User user = getUserOrThrow(userId);
         boolean isPro = user.getPlanType() == PlanType.PRO;
+        SessionMode sessionMode = interview.getSessionMode() == null ? SessionMode.PRACTICE : interview.getSessionMode();
+
+        List<InterviewQuestion> orderedQuestions =
+            interviewQuestionRepository.findByInterviewIdOrderByQuestionOrder(interview.getId());
+        long answeredCount = interviewAnswerRepository.countByInterviewId(interview.getId());
+        List<InterviewStartResponse.QuestionDto> questionDtos = orderedQuestions.stream()
+            .map(question -> new InterviewStartResponse.QuestionDto(
+                question.getId(),
+                question.getQuestionOrder(),
+                question.getContent()
+            ))
+            .collect(Collectors.toList());
 
         List<InterviewResult> results = interviewResultRepository.findByInterviewIdOrderByQuestionId(interview.getId());
         int totalScore = (int) Math.round(
@@ -400,12 +496,23 @@ public class InterviewService {
             })
             .collect(Collectors.toList());
 
-        return InterviewCompleteResponse.builder()
+        InterviewCompleteResponse.InterviewCompleteResponseBuilder responseBuilder = InterviewCompleteResponse.builder()
             .interviewId(interview.getId())
             .status(interview.getStatus().name())
+            .sessionMode(sessionMode.name())
+            .interviewMode(interview.getInterviewMode())
             .totalScore(totalScore)
-            .results(summaries)
-            .build();
+            .results(summaries);
+
+        if (interview.getStatus() == InterviewSessionStatus.IN_PROGRESS) {
+            responseBuilder
+                .questions(questionDtos)
+                .answeredCount((int) answeredCount)
+                .timeLimitSeconds(resolveTimeLimitSeconds(sessionMode))
+                .questionStartedAt(interview.getCurrentQuestionStartedAt());
+        }
+
+        return responseBuilder.build();
     }
 
     private String buildDetailedFeedbackJson(ParsedFeedback parsedFeedback) {

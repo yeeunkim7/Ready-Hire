@@ -2,6 +2,8 @@ package com.devinterview.api.domain.interview.entity;
 
 import com.devinterview.api.domain.common.BaseTimeEntity;
 import com.devinterview.api.domain.entity.User;
+import com.devinterview.api.domain.enums.SessionMode;
+import java.time.LocalDateTime;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -56,4 +58,16 @@ public class Interview extends BaseTimeEntity {
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
     private InterviewSessionStatus status = InterviewSessionStatus.IN_PROGRESS;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "session_mode", nullable = false, length = 20)
+    @Builder.Default
+    private SessionMode sessionMode = SessionMode.PRACTICE;
+
+    @Column(name = "interview_mode", nullable = false, length = 30)
+    @Builder.Default
+    private String interviewMode = "STANDARD";
+
+    @Column(name = "current_question_started_at", columnDefinition = "timestamptz")
+    private LocalDateTime currentQuestionStartedAt;
 }

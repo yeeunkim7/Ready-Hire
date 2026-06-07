@@ -14,6 +14,8 @@ public class InterviewHistoryResponse {
     private final List<String> techStack;
     private final String experienceLevel;
     private final String status;
+    private final String sessionMode;
+    private final String interviewMode;
     private final LocalDateTime createdAt;
     private final Integer totalScore;
 }

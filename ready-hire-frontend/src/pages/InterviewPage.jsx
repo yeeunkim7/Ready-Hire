@@ -6,6 +6,8 @@ import {
   SESSION_MODES,
   SESSION_MODE_LABELS,
   TIMEOUT_ANSWER_PLACEHOLDER,
+  computeRemainingSeconds,
+  mapApiQuestions,
   sessionModeStorageKey,
 } from '../constants/interviewSession.js'
 import Navbar from '../components/Navbar.jsx'
@@ -16,6 +18,34 @@ function formatSeconds(total) {
   const minutes = Math.floor(total / 60)
   const seconds = total % 60
   return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
+
+function applySessionMeta({
+  sessionMode,
+  interviewMode,
+  questionStartedAt,
+  timeLimitSeconds,
+  answeredCount,
+  interviewId,
+}) {
+  if (sessionMode) {
+    sessionStorage.setItem(sessionModeStorageKey(interviewId), sessionMode)
+  }
+  if (interviewMode) {
+    sessionStorage.setItem(`interview_mode_${interviewId}`, interviewMode)
+  }
+
+  const isExam = sessionMode === SESSION_MODES.EXAM
+  const remaining = isExam
+    ? computeRemainingSeconds(questionStartedAt, timeLimitSeconds ?? EXAM_SECONDS_PER_QUESTION)
+    : EXAM_SECONDS_PER_QUESTION
+
+  return {
+    sessionMode: sessionMode ?? SESSION_MODES.PRACTICE,
+    interviewMode: interviewMode ?? 'STANDARD',
+    remainingSeconds: remaining,
+    answeredCount: answeredCount ?? 0,
+  }
 }
 
 /**
@@ -31,12 +61,11 @@ function InterviewPage() {
   const [questions, setQuestions] = useState([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [answer, setAnswer] = useState('')
+  const [sessionMode, setSessionMode] = useState(SESSION_MODES.PRACTICE)
+  const [interviewMode, setInterviewMode] = useState('STANDARD')
   const [remainingSeconds, setRemainingSeconds] = useState(EXAM_SECONDS_PER_QUESTION)
+  const [shouldAutoSubmit, setShouldAutoSubmit] = useState(false)
 
-  const sessionMode =
-    location.state?.sessionMode
-    ?? sessionStorage.getItem(sessionModeStorageKey(id))
-    ?? SESSION_MODES.PRACTICE
   const isExamMode = sessionMode === SESSION_MODES.EXAM
 
   const answerRef = useRef(answer)
@@ -56,6 +85,7 @@ function InterviewPage() {
         setLoading(true)
         const fromState = location.state?.questions
         let raw = Array.isArray(fromState) && fromState.length ? fromState : null
+
         if (!raw) {
           try {
             const cached = sessionStorage.getItem(`interview_questions_${id}`)
@@ -64,8 +94,23 @@ function InterviewPage() {
             raw = null
           }
         }
+
         if (raw?.length) {
-          setQuestions(raw)
+          const mapped = mapApiQuestions(raw)
+          setQuestions(mapped)
+          const meta = applySessionMeta({
+            sessionMode:
+              location.state?.sessionMode ?? sessionStorage.getItem(sessionModeStorageKey(id)),
+            interviewMode:
+              location.state?.interviewMode ?? sessionStorage.getItem(`interview_mode_${id}`),
+            questionStartedAt: location.state?.questionStartedAt,
+            timeLimitSeconds: location.state?.timeLimitSeconds,
+            answeredCount: 0,
+            interviewId: id,
+          })
+          setSessionMode(meta.sessionMode)
+          setInterviewMode(meta.interviewMode)
+          setRemainingSeconds(meta.remainingSeconds)
           return
         }
 
@@ -74,8 +119,33 @@ function InterviewPage() {
           navigate(`/interview/${id}/result`, { replace: true })
           return
         }
-        showToast('면접 질문 정보를 찾을 수 없습니다. 면접 설정부터 다시 시작해 주세요.', 'error')
-        navigate('/interview/mode', { replace: true })
+
+        const mapped = mapApiQuestions(detail?.questions)
+        if (!mapped.length) {
+          showToast('면접 질문 정보를 찾을 수 없습니다. 면접 설정부터 다시 시작해 주세요.', 'error')
+          navigate('/interview/mode', { replace: true })
+          return
+        }
+
+        setQuestions(mapped)
+        sessionStorage.setItem(`interview_questions_${id}`, JSON.stringify(mapped))
+
+        const meta = applySessionMeta({
+          sessionMode: detail.sessionMode,
+          interviewMode: detail.interviewMode,
+          questionStartedAt: detail.questionStartedAt,
+          timeLimitSeconds: detail.timeLimitSeconds,
+          answeredCount: detail.answeredCount,
+          interviewId: id,
+        })
+        setSessionMode(meta.sessionMode)
+        setInterviewMode(meta.interviewMode)
+        setCurrentIndex(meta.answeredCount)
+        setRemainingSeconds(meta.remainingSeconds)
+
+        if (meta.sessionMode === SESSION_MODES.EXAM && meta.remainingSeconds <= 0) {
+          setShouldAutoSubmit(true)
+        }
       } catch {
         /* axios / unwrap */
       } finally {
@@ -83,25 +153,27 @@ function InterviewPage() {
       }
     }
     bootstrap()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 초기 진입 시 질문 목록만 복원
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 초기 진입 시 면접 세션 복원
   }, [id, navigate, showToast])
 
   const total = questions.length || 5
   const currentQuestion = useMemo(() => questions[currentIndex] ?? {}, [questions, currentIndex])
 
-  const goNextOrComplete = useCallback(
-    async (interviewMode) => {
-      if (currentIndex + 1 >= total) {
-        await completeInterview(id)
-        sessionStorage.removeItem(`interview_questions_${id}`)
-        navigate(`/interview/${id}/result`, { state: { interviewMode, sessionMode } })
-        return
-      }
-      setCurrentIndex((prev) => prev + 1)
-      setAnswer('')
-    },
-    [currentIndex, id, navigate, sessionMode, total],
-  )
+  const goNextOrComplete = useCallback(async () => {
+    if (currentIndex + 1 >= total) {
+      await completeInterview(id)
+      sessionStorage.removeItem(`interview_questions_${id}`)
+      sessionStorage.removeItem(sessionModeStorageKey(id))
+      sessionStorage.removeItem(`interview_mode_${id}`)
+      navigate(`/interview/${id}/result`, { state: { interviewMode, sessionMode } })
+      return
+    }
+    setCurrentIndex((prev) => prev + 1)
+    setAnswer('')
+    if (isExamMode) {
+      setRemainingSeconds(EXAM_SECONDS_PER_QUESTION)
+    }
+  }, [currentIndex, id, interviewMode, isExamMode, navigate, sessionMode, total])
 
   const handleSubmit = useCallback(
     async ({ forced = false } = {}) => {
@@ -126,16 +198,14 @@ function InterviewPage() {
           showToast('시간이 초과되어 답변이 자동 제출되었습니다.', 'error')
         }
 
-        const interviewMode =
-          location.state?.interviewMode ?? sessionStorage.getItem(`interview_mode_${id}`) ?? 'STANDARD'
-        await goNextOrComplete(interviewMode)
+        await goNextOrComplete()
       } catch {
         /* axios / unwrap */
       } finally {
         setSubmitting(false)
       }
     },
-    [currentQuestion.id, goNextOrComplete, id, location.state?.interviewMode, showToast],
+    [currentQuestion.id, goNextOrComplete, id, showToast],
   )
 
   const handleSubmitRef = useRef(handleSubmit)
@@ -144,9 +214,13 @@ function InterviewPage() {
   }, [handleSubmit])
 
   useEffect(() => {
-    if (!isExamMode || loading || submitting) return undefined
+    if (!shouldAutoSubmit || loading || submitting || !currentQuestion.id) return
+    setShouldAutoSubmit(false)
+    handleSubmit({ forced: true })
+  }, [shouldAutoSubmit, loading, submitting, currentQuestion.id, handleSubmit])
 
-    setRemainingSeconds(EXAM_SECONDS_PER_QUESTION)
+  useEffect(() => {
+    if (!isExamMode || loading || submitting) return undefined
 
     const interval = window.setInterval(() => {
       setRemainingSeconds((prev) => {

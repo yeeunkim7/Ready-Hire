@@ -1,5 +1,6 @@
 package com.devinterview.api.domain.interview.dto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -7,7 +8,11 @@ import java.util.List;
  */
 public record InterviewStartResponse(
     Long interviewId,
-    List<QuestionDto> questions
+    List<QuestionDto> questions,
+    String sessionMode,
+    String interviewMode,
+    Integer timeLimitSeconds,
+    LocalDateTime questionStartedAt
 ) {
 
     public record QuestionDto(

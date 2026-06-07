@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getInterviewDetail } from '../api/interview.js'
 import Navbar from '../components/Navbar.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { SESSION_MODE_LABELS } from '../constants/interviewSession.js'
 import { getScoreColorClass } from '../utils/score.js'
 
 const INTERVIEW_MODE_LABELS = {
@@ -40,8 +41,17 @@ function InterviewResultPage() {
   const questionResults = useMemo(() => result?.results ?? [], [result])
   const totalScore = result?.totalScore ?? 0
   const interviewMode =
-    location.state?.interviewMode ?? sessionStorage.getItem(`interview_mode_${id}`) ?? 'STANDARD'
+    result?.interviewMode
+    ?? location.state?.interviewMode
+    ?? sessionStorage.getItem(`interview_mode_${id}`)
+    ?? 'STANDARD'
+  const sessionMode =
+    result?.sessionMode
+    ?? location.state?.sessionMode
+    ?? sessionStorage.getItem(`interview_session_mode_${id}`)
+    ?? 'PRACTICE'
   const modeLabel = INTERVIEW_MODE_LABELS[interviewMode] ?? INTERVIEW_MODE_LABELS.STANDARD
+  const sessionModeLabel = SESSION_MODE_LABELS[sessionMode] ?? SESSION_MODE_LABELS.PRACTICE
 
   if (loading) {
     return (
@@ -61,9 +71,14 @@ function InterviewResultPage() {
       <Navbar />
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
         <section className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm">
-          <span className="inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-primary">
-            {modeLabel}
-          </span>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <span className="inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-primary">
+              {modeLabel}
+            </span>
+            <span className="inline-block rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+              {sessionModeLabel}
+            </span>
+          </div>
           <p className="mt-4 text-sm text-gray-500">전체 평균 점수</p>
           <p className={`mt-2 text-5xl font-bold ${getScoreColorClass(totalScore)}`}>{totalScore}</p>
         </section>

@@ -18,6 +18,8 @@ public class InterviewSummaryDto {
     private List<String> techStack;
     private String experienceLevel;
     private String status;
+    private String sessionMode;
+    private String interviewMode;
     private LocalDateTime createdAt;
 
     public static InterviewSummaryDto from(Interview interview) {
@@ -27,6 +29,8 @@ public class InterviewSummaryDto {
             .techStack(interview.getTechStack())
             .experienceLevel(interview.getExperienceLevel())
             .status(interview.getStatus().name())
+            .sessionMode(interview.getSessionMode() == null ? null : interview.getSessionMode().name())
+            .interviewMode(interview.getInterviewMode())
             .createdAt(interview.getCreatedAt())
             .build();
     }

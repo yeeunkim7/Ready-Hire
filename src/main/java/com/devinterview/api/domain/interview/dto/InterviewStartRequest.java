@@ -32,4 +32,7 @@ public class InterviewStartRequest {
 
     /** STANDARD (기본) / JOB_POSTING (채용공고 기반) / PORTFOLIO (포트폴리오 기반) */
     private String interviewMode;
+
+    /** PRACTICE (연습) / EXAM (실전, 질문당 90초) */
+    private String sessionMode;
 }

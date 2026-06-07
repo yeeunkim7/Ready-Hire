@@ -193,6 +193,8 @@ public class UserService {
             .techStack(interview.getTechStack())
             .experienceLevel(interview.getExperienceLevel())
             .status(interview.getStatus().name())
+            .sessionMode(complete.getSessionMode())
+            .interviewMode(complete.getInterviewMode())
             .createdAt(interview.getCreatedAt())
             .totalScore(complete.getTotalScore())
             .results(results)
@@ -207,6 +209,8 @@ public class UserService {
             .techStack(interview.getTechStack())
             .experienceLevel(interview.getExperienceLevel())
             .status(interview.getStatus().name())
+            .sessionMode(interview.getSessionMode() == null ? null : interview.getSessionMode().name())
+            .interviewMode(interview.getInterviewMode())
             .createdAt(interview.getCreatedAt())
             .totalScore(totalScore)
             .build();
