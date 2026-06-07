@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import PrivateRoute from './components/PrivateRoute.jsx'
+import AppLayout from './layouts/AppLayout.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import InterviewPage from './pages/InterviewPage.jsx'
 import InterviewResultPage from './pages/InterviewResultPage.jsx'
@@ -18,54 +19,53 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
+
+      {/* 대시보드 — 넓은 콘텐츠 */}
       <Route
-        path="/dashboard"
         element={
           <PrivateRoute>
-            <DashboardPage />
+            <AppLayout maxWidth="5xl" />
           </PrivateRoute>
         }
-      />
+      >
+        <Route path="/dashboard" element={<DashboardPage />} />
+      </Route>
+
+      {/* 면접 설정 플로우 — 중간 너비 */}
       <Route
-        path="/interview/mode"
         element={
           <PrivateRoute>
-            <InterviewModeSelectPage />
+            <AppLayout maxWidth="2xl" />
           </PrivateRoute>
         }
-      />
+      >
+        <Route path="/interview/mode" element={<InterviewModeSelectPage />} />
+        <Route path="/interview/setup" element={<InterviewSetupPage />} />
+      </Route>
+
+      {/* 면접 진행 — 집중형 좁은 너비 */}
       <Route
-        path="/interview/setup"
         element={
           <PrivateRoute>
-            <InterviewSetupPage />
+            <AppLayout maxWidth="md" />
           </PrivateRoute>
         }
-      />
+      >
+        <Route path="/interview/:id" element={<InterviewPage />} />
+      </Route>
+
+      {/* 결과 / 마이페이지 — 본문 너비 */}
       <Route
-        path="/interview/:id"
         element={
           <PrivateRoute>
-            <InterviewPage />
+            <AppLayout maxWidth="3xl" />
           </PrivateRoute>
         }
-      />
-      <Route
-        path="/interview/:id/result"
-        element={
-          <PrivateRoute>
-            <InterviewResultPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/mypage"
-        element={
-          <PrivateRoute>
-            <MyPage />
-          </PrivateRoute>
-        }
-      />
+      >
+        <Route path="/interview/:id/result" element={<InterviewResultPage />} />
+        <Route path="/mypage" element={<MyPage />} />
+      </Route>
+
       <Route
         path="/subscription"
         element={
@@ -74,6 +74,7 @@ function App() {
           </PrivateRoute>
         }
       />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

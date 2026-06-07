@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getInterviewHistory } from '../api/interview.js'
 import { getTodayUsage } from '../api/usage.js'
-import Navbar from '../components/Navbar.jsx'
 import PlanBadge from '../components/PlanBadge.jsx'
+import Button from '../components/ui/Button.jsx'
+import Card from '../components/ui/Card.jsx'
+import Section from '../components/ui/Section.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
 /**
@@ -42,81 +44,100 @@ function DashboardPage() {
   const isFree = String(user?.planType ?? 'FREE').toUpperCase() !== 'PRO'
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      {isFree && (
-        <div className="sticky top-0 z-40 border-b border-amber-200 bg-amber-100 px-4 py-3 text-center text-sm text-amber-900">
-          <button type="button" className="font-semibold underline" onClick={() => navigate('/mypage#subscription')}>
-            PRO로 업그레이드
-          </button>
-          <span className="hidden sm:inline"> — 무제한 면접과 상세 AI 피드백을 이용해 보세요.</span>
-        </div>
-      )}
-      <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm text-gray-500">로그인 계정</p>
-              <p className="text-lg font-semibold">{user?.email}</p>
-            </div>
-            <PlanBadge planType={user?.planType} />
+    <>
+      <Section className="bg-gradient-to-br from-white to-indigo-50/60">
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          <div className="max-w-md space-y-3">
+            <p className="text-sm font-medium text-primary">AI MOCK INTERVIEW</p>
+            <h1 className="text-2xl font-bold text-gray-900">면접, 부담 없이 연습해요 👋</h1>
+            <p className="text-sm text-gray-600">
+              오늘도 한 걸음씩! Ready-Hire와 함께 면접 감각을 키워보세요.
+            </p>
+            <Button onClick={() => navigate('/interview/mode')}>새 면접 시작 →</Button>
           </div>
-          {String(user?.planType ?? 'FREE').toUpperCase() !== 'PRO' && (
-            <p className="mt-4 rounded-xl bg-gray-50 p-3 text-sm text-gray-600">오늘 남은 횟수 {remainingFreeCount}/3회</p>
-          )}
-          <button
-            type="button"
-            onClick={() => navigate('/interview/mode')}
-            className="mt-4 rounded-xl bg-primary px-6 py-3 font-medium text-white"
+          {/* 마스코트 자리 (추후 이미지로 교체) */}
+          <div
+            aria-hidden
+            className="flex h-32 w-32 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-6xl shadow-sm"
           >
-            새 면접 시작
-          </button>
-        </section>
+            🐥
+          </div>
+        </div>
+      </Section>
 
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold">최근 면접 히스토리</h2>
-          {loading ? (
-            <p className="mt-4 text-sm text-gray-500">불러오는 중...</p>
-          ) : history.length === 0 ? (
-            <p className="mt-4 text-sm text-gray-500">아직 면접 기록이 없습니다.</p>
-          ) : (
-            <>
-              <ul className="mt-4 space-y-3">
-                {history.map((item) => (
-                  <li key={item.interviewId ?? item.id} className="rounded-xl border border-gray-100 p-4">
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-between text-left"
-                      onClick={() => navigate(`/interview/${item.interviewId ?? item.id}/result`)}
-                    >
-                      <div>
-                        <p className="font-medium">{item.jobRole ?? item.position ?? '직무 미지정'}</p>
-                        <p className="text-sm text-gray-500">
-                          {item.createdAt ? new Date(item.createdAt).toLocaleString() : '날짜 정보 없음'}
-                        </p>
-                      </div>
-                      <span className="text-sm text-gray-600">{item.status ?? 'COMPLETED'}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              {isFree && history.length >= 3 && (
-                <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
-                  <p>📋 최근 3건만 표시됩니다. 전체 히스토리는 PRO 플랜에서 확인하세요.</p>
+      {isFree && (
+        <Section className="border-amber-200 bg-amber-50">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-amber-900">
+              PRO로 업그레이드하면 무제한 면접과 상세 AI 피드백을 이용할 수 있어요.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
+              onClick={() => navigate('/mypage#subscription')}
+            >
+              PRO로 업그레이드
+            </Button>
+          </div>
+        </Section>
+      )}
+
+      <Section>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-gray-500">로그인 계정</p>
+            <p className="text-lg font-semibold">{user?.email}</p>
+          </div>
+          <PlanBadge planType={user?.planType} />
+        </div>
+        {isFree && (
+          <p className="mt-4 rounded-xl bg-gray-50 p-3 text-sm text-gray-600">오늘 남은 횟수 {remainingFreeCount}/3회</p>
+        )}
+      </Section>
+
+      <Section title="최근 면접 히스토리">
+        {loading ? (
+          <p className="text-sm text-gray-500">불러오는 중...</p>
+        ) : history.length === 0 ? (
+          <p className="text-sm text-gray-500">아직 면접 기록이 없습니다.</p>
+        ) : (
+          <>
+            <ul className="space-y-3">
+              {history.map((item) => (
+                <li key={item.interviewId ?? item.id} className="rounded-2xl border border-gray-100 p-4">
                   <button
                     type="button"
-                    onClick={() => navigate('/mypage#subscription')}
-                    className="mt-2 font-semibold text-primary underline"
+                    className="flex w-full items-center justify-between text-left"
+                    onClick={() => navigate(`/interview/${item.interviewId ?? item.id}/result`)}
                   >
-                    PRO 업그레이드 →
+                    <div>
+                      <p className="font-medium">{item.jobRole ?? item.position ?? '직무 미지정'}</p>
+                      <p className="text-sm text-gray-500">
+                        {item.createdAt ? new Date(item.createdAt).toLocaleString() : '날짜 정보 없음'}
+                      </p>
+                    </div>
+                    <span className="text-sm text-gray-600">{item.status ?? 'COMPLETED'}</span>
                   </button>
-                </div>
-              )}
-            </>
-          )}
-        </section>
-      </main>
-    </div>
+                </li>
+              ))}
+            </ul>
+            {isFree && history.length >= 3 && (
+              <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+                <p>📋 최근 3건만 표시됩니다. 전체 히스토리는 PRO 플랜에서 확인하세요.</p>
+                <button
+                  type="button"
+                  onClick={() => navigate('/mypage#subscription')}
+                  className="mt-2 font-semibold text-primary underline"
+                >
+                  PRO 업그레이드 →
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </Section>
+    </>
   )
 }
 

@@ -4,7 +4,9 @@ import { SESSION_MODE_LABELS, SESSION_MODES, sessionModeStorageKey } from '../co
 import { parsePdf, startInterview } from '../api/interview.js'
 import ConfirmModal from '../components/ConfirmModal.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
-import Navbar from '../components/Navbar.jsx'
+import Button from '../components/ui/Button.jsx'
+import Card from '../components/ui/Card.jsx'
+import Input from '../components/ui/Input.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useToast } from '../contexts/ToastContext.jsx'
 
@@ -287,27 +289,25 @@ function InterviewSetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      <main className="mx-auto max-w-2xl space-y-6 px-4 py-6">
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-xl font-bold">면접 설정</h1>
-            <div className="flex items-center gap-2">
-              <span className="rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-primary">
-                {SESSION_MODE_LABELS[sessionMode] ?? SESSION_MODE_LABELS[SESSION_MODES.PRACTICE]}
-              </span>
-              <button
-                type="button"
-                onClick={() => navigate('/interview/mode', { state: { sessionMode } })}
-                className="text-xs text-gray-500 underline"
-              >
-                모드 변경
-              </button>
-            </div>
+    <>
+      <Card>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-xl font-bold">면접 설정</h1>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-primary">
+              {SESSION_MODE_LABELS[sessionMode] ?? SESSION_MODE_LABELS[SESSION_MODES.PRACTICE]}
+            </span>
+            <button
+              type="button"
+              onClick={() => navigate('/interview/mode', { state: { sessionMode } })}
+              className="text-xs text-gray-500 underline"
+            >
+              모드 변경
+            </button>
           </div>
+        </div>
 
-          <div className="mt-6">
+        <div className="mt-6">
             <p className="mb-2 text-sm font-medium">면접 모드</p>
             <div className="flex flex-wrap gap-2">
               {MODE_TABS.map((mode) => (
@@ -409,12 +409,11 @@ function InterviewSetupPage() {
             <div>
               <p className="mb-2 text-sm font-medium">2. 직무 선택</p>
               {category === '기타' ? (
-                <input
+                <Input
                   type="text"
                   value={customJobRole}
                   onChange={(event) => setCustomJobRole(event.target.value)}
                   placeholder="직무를 직접 입력하세요"
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2"
                 />
               ) : (
                 <div className="flex flex-wrap gap-2">
@@ -476,17 +475,15 @@ function InterviewSetupPage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleStart}
-            disabled={loading || pdfLoading}
-            className="mt-6 w-full rounded-xl bg-primary px-6 py-3 font-medium text-white disabled:cursor-not-allowed disabled:bg-indigo-300"
-          >
-            {loading ? '면접 생성 중...' : '면접 시작'}
-          </button>
-        </section>
-        {loading && <LoadingSpinner message="질문을 생성하고 있어요..." />}
-      </main>
+        <Button
+          onClick={handleStart}
+          disabled={loading || pdfLoading}
+          className="mt-6 w-full"
+        >
+          {loading ? '면접 생성 중...' : '면접 시작'}
+        </Button>
+      </Card>
+      {loading && <LoadingSpinner message="질문을 생성하고 있어요..." />}
 
       <ConfirmModal
         isOpen={showProModal}
@@ -500,7 +497,7 @@ function InterviewSetupPage() {
         }}
         onCancel={() => setShowProModal(false)}
       />
-    </div>
+    </>
   )
 }
 

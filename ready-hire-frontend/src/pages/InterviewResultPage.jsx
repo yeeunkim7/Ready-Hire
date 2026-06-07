@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getInterviewDetail } from '../api/interview.js'
-import Navbar from '../components/Navbar.jsx'
+import Button from '../components/ui/Button.jsx'
+import Card from '../components/ui/Card.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { SESSION_MODE_LABELS } from '../constants/interviewSession.js'
 import { getScoreColorClass } from '../utils/score.js'
@@ -54,81 +55,68 @@ function InterviewResultPage() {
   const sessionModeLabel = SESSION_MODE_LABELS[sessionMode] ?? SESSION_MODE_LABELS.PRACTICE
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <main className="mx-auto max-w-3xl px-4 py-8">
-          <p className="text-sm text-gray-500">결과를 불러오는 중...</p>
-        </main>
-      </div>
-    )
+    return <p className="text-sm text-gray-500">결과를 불러오는 중...</p>
   }
 
   const isPro = String(user?.planType ?? 'FREE').toUpperCase() === 'PRO'
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm">
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-primary">
-              {modeLabel}
-            </span>
-            <span className="inline-block rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-              {sessionModeLabel}
-            </span>
-          </div>
-          <p className="mt-4 text-sm text-gray-500">전체 평균 점수</p>
-          <p className={`mt-2 text-5xl font-bold ${getScoreColorClass(totalScore)}`}>{totalScore}</p>
-        </section>
+    <>
+      <Card className="text-center">
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <span className="inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-primary">
+            {modeLabel}
+          </span>
+          <span className="inline-block rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+            {sessionModeLabel}
+          </span>
+        </div>
+        <p className="mt-4 text-sm text-gray-500">전체 평균 점수</p>
+        <p className={`mt-2 text-5xl font-bold ${getScoreColorClass(totalScore)}`}>{totalScore}</p>
+      </Card>
 
-        <section className="space-y-4">
-          {questionResults.length === 0 && (
-            <p className="rounded-2xl border border-gray-100 bg-white p-6 text-center text-sm text-gray-500 shadow-sm">
-              질문별 결과가 없습니다.
-            </p>
-          )}
-          {questionResults.map((item, index) => (
-            <article key={item.questionId ?? index} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-              <p className="text-sm text-gray-500">질문 {index + 1}</p>
-              <p className="mt-1 font-medium">{item.questionContent ?? '질문 정보 없음'}</p>
-              <p className={`mt-3 text-lg font-semibold ${getScoreColorClass(item.score)}`}>점수: {item.score ?? 0}</p>
-              {isPro ? (
-                <div className="mt-4 space-y-2 rounded-xl bg-gray-50 p-3 text-sm text-gray-700">
-                  <p>잘한점: {item.strengths ?? '-'}</p>
-                  <p>개선점: {item.improvements ?? '-'}</p>
-                  <p>모범답안: {item.modelAnswer ?? '-'}</p>
-                </div>
-              ) : (
-                <div className="mt-4 rounded-xl border border-purple-100 bg-purple-50 p-4 text-sm text-purple-900">
-                  <p className="font-semibold">🔒 PRO 플랜에서 확인 가능</p>
-                  <ul className="mt-2 list-inside list-disc space-y-1 text-purple-800">
-                    <li>잘한점 / 개선점 / 모범답안</li>
-                  </ul>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/mypage#subscription')}
-                    className="mt-3 w-full rounded-xl bg-secondary px-4 py-2 font-medium text-white sm:w-auto"
-                  >
-                    PRO 업그레이드 →
-                  </button>
-                </div>
-              )}
-            </article>
-          ))}
-        </section>
+      <section className="space-y-4">
+        {questionResults.length === 0 && (
+          <Card className="text-center text-sm text-gray-500">질문별 결과가 없습니다.</Card>
+        )}
+        {questionResults.map((item, index) => (
+          <Card as="article" key={item.questionId ?? index}>
+            <p className="text-sm text-gray-500">질문 {index + 1}</p>
+            <p className="mt-1 font-medium">{item.questionContent ?? '질문 정보 없음'}</p>
+            <p className={`mt-3 text-lg font-semibold ${getScoreColorClass(item.score)}`}>점수: {item.score ?? 0}</p>
+            {isPro ? (
+              <div className="mt-4 space-y-2 rounded-xl bg-gray-50 p-3 text-sm text-gray-700">
+                <p>잘한점: {item.strengths ?? '-'}</p>
+                <p>개선점: {item.improvements ?? '-'}</p>
+                <p>모범답안: {item.modelAnswer ?? '-'}</p>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-xl border border-purple-100 bg-purple-50 p-4 text-sm text-purple-900">
+                <p className="font-semibold">🔒 PRO 플랜에서 확인 가능</p>
+                <ul className="mt-2 list-inside list-disc space-y-1 text-purple-800">
+                  <li>잘한점 / 개선점 / 모범답안</li>
+                </ul>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => navigate('/mypage#subscription')}
+                  className="mt-3 w-full sm:w-auto"
+                >
+                  PRO 업그레이드 →
+                </Button>
+              </div>
+            )}
+          </Card>
+        ))}
+      </section>
 
-        <section className="flex flex-wrap gap-3">
-          <button type="button" onClick={() => navigate('/interview/mode')} className="rounded-xl bg-primary px-6 py-3 font-medium text-white">
-            다시 면접하기
-          </button>
-          <button type="button" onClick={() => navigate('/dashboard')} className="rounded-xl border border-gray-200 bg-white px-6 py-3 font-medium">
-            홈으로
-          </button>
-        </section>
-      </main>
-    </div>
+      <section className="flex flex-wrap gap-3">
+        <Button onClick={() => navigate('/interview/mode')}>다시 면접하기</Button>
+        <Button variant="outline" onClick={() => navigate('/dashboard')}>
+          홈으로
+        </Button>
+      </section>
+    </>
   )
 }
 

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { cancelSubscription, getSubscriptionStatus, verifyPayment } from '../api/payment.js'
 import ConfirmModal from './ConfirmModal.jsx'
 import PlanBadge from './PlanBadge.jsx'
+import Button from './ui/Button.jsx'
+import Card from './ui/Card.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useToast } from '../contexts/ToastContext.jsx'
 
@@ -101,15 +103,15 @@ function SubscriptionSection() {
 
   if (loading) {
     return (
-      <section id="subscription" className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      <Card as="section" id="subscription">
         <h2 className="text-lg font-semibold">구독 관리</h2>
         <p className="mt-4 text-sm text-gray-500">구독 정보를 불러오는 중...</p>
-      </section>
+      </Card>
     )
   }
 
   return (
-    <section id="subscription" className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <Card as="section" id="subscription">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">구독 관리</h2>
         <PlanBadge planType={isPro ? 'PRO' : 'FREE'} />
@@ -126,14 +128,9 @@ function SubscriptionSection() {
               <li>PDF 맞춤 면접 · 전체 히스토리</li>
             </ul>
           </div>
-          <button
-            type="button"
-            disabled={paying}
-            onClick={handlePay}
-            className="mt-4 w-full rounded-xl bg-primary px-6 py-3 font-medium text-white disabled:cursor-not-allowed disabled:bg-indigo-300"
-          >
+          <Button disabled={paying} onClick={handlePay} className="mt-4 w-full">
             {paying ? '결제 처리 중...' : '월 9,900원 — PRO로 업그레이드'}
-          </button>
+          </Button>
         </>
       ) : (
         <>
@@ -164,13 +161,9 @@ function SubscriptionSection() {
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setCancelOpen(true)}
-            className="mt-4 w-full rounded-xl border border-red-200 bg-red-50 px-6 py-3 text-sm font-medium text-red-700"
-          >
+          <Button variant="dangerOutline" onClick={() => setCancelOpen(true)} className="mt-4 w-full">
             구독 해지
-          </button>
+          </Button>
         </>
       )}
 
@@ -184,7 +177,7 @@ function SubscriptionSection() {
         onCancel={() => setCancelOpen(false)}
         onConfirm={handleCancelConfirm}
       />
-    </section>
+    </Card>
   )
 }
 

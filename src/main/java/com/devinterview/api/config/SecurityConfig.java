@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -93,7 +94,8 @@ public class SecurityConfig {
                     publicPaths.add("/swagger-ui/**");
                     publicPaths.add("/v3/api-docs/**");
                 }
-                auth.requestMatchers(publicPaths.toArray(String[]::new)).permitAll()
+                auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    .requestMatchers(publicPaths.toArray(String[]::new)).permitAll()
                     .anyRequest().authenticated();
             })
             .oauth2Login(oauth2 -> oauth2

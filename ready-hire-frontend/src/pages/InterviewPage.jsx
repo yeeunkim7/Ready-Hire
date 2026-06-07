@@ -10,8 +10,9 @@ import {
   mapApiQuestions,
   sessionModeStorageKey,
 } from '../constants/interviewSession.js'
-import Navbar from '../components/Navbar.jsx'
 import ProgressBar from '../components/ProgressBar.jsx'
+import Button from '../components/ui/Button.jsx'
+import Card from '../components/ui/Card.jsx'
 import { useToast } from '../contexts/ToastContext.jsx'
 
 function formatSeconds(total) {
@@ -237,63 +238,48 @@ function InterviewPage() {
   }, [currentIndex, isExamMode, loading, submitting])
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <main className="mx-auto max-w-md px-4 py-8">
-          <p className="text-sm text-gray-500">면접 질문을 불러오는 중...</p>
-        </main>
-      </div>
-    )
+    return <p className="text-sm text-gray-500">면접 질문을 불러오는 중...</p>
   }
 
   const timerUrgent = isExamMode && remainingSeconds <= 30
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      <main className="mx-auto max-w-md space-y-4 px-4 py-6">
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-primary">
-              {SESSION_MODE_LABELS[sessionMode]}
-            </span>
-            {isExamMode && (
-              <span className={`text-sm font-semibold ${timerUrgent ? 'text-red-600' : 'text-gray-700'}`}>
-                남은 시간 {formatSeconds(remainingSeconds)}
-              </span>
-            )}
-          </div>
+    <Card as="section">
+      <div className="flex items-center justify-between gap-3">
+        <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-primary">
+          {SESSION_MODE_LABELS[sessionMode]}
+        </span>
+        {isExamMode && (
+          <span className={`text-sm font-semibold ${timerUrgent ? 'text-red-600' : 'text-gray-700'}`}>
+            남은 시간 {formatSeconds(remainingSeconds)}
+          </span>
+        )}
+      </div>
 
-          <ProgressBar current={Math.min(currentIndex + 1, total)} total={total} />
-          <p className="mt-4 text-base font-medium">
-            {currentQuestion.content ?? `${currentIndex + 1}번 질문을 준비 중입니다.`}
-          </p>
+      <div className="mt-4">
+        <ProgressBar current={Math.min(currentIndex + 1, total)} total={total} />
+      </div>
+      <p className="mt-4 text-base font-medium">
+        {currentQuestion.content ?? `${currentIndex + 1}번 질문을 준비 중입니다.`}
+      </p>
 
-          {isExamMode && (
-            <p className="mt-2 text-xs text-gray-500">질문당 1분 30초 안에 답변해 주세요. 시간 초과 시 자동 제출됩니다.</p>
-          )}
+      {isExamMode && (
+        <p className="mt-2 text-xs text-gray-500">질문당 1분 30초 안에 답변해 주세요. 시간 초과 시 자동 제출됩니다.</p>
+      )}
 
-          <textarea
-            className="mt-4 min-h-28 w-full rounded-xl border border-gray-200 p-3 text-sm focus:border-primary focus:outline-none"
-            value={answer}
-            onChange={(event) => setAnswer(event.target.value.slice(0, 500))}
-            placeholder="답변을 입력하세요 (최대 500자)"
-            rows={5}
-            disabled={submitting}
-          />
-          <p className="mt-2 text-right text-xs text-gray-500">{answer.length}/500</p>
-          <button
-            type="button"
-            onClick={() => handleSubmit()}
-            disabled={submitting}
-            className="mt-4 w-full rounded-xl bg-primary px-6 py-3 font-medium text-white disabled:cursor-not-allowed disabled:bg-indigo-300"
-          >
-            {submitting ? '제출 중...' : currentIndex + 1 >= total ? '제출' : '다음 질문'}
-          </button>
-        </section>
-      </main>
-    </div>
+      <textarea
+        className="mt-4 min-h-28 w-full rounded-xl border border-gray-200 p-3 text-sm focus:border-primary focus:outline-none"
+        value={answer}
+        onChange={(event) => setAnswer(event.target.value.slice(0, 500))}
+        placeholder="답변을 입력하세요 (최대 500자)"
+        rows={5}
+        disabled={submitting}
+      />
+      <p className="mt-2 text-right text-xs text-gray-500">{answer.length}/500</p>
+      <Button onClick={() => handleSubmit()} disabled={submitting} className="mt-4 w-full">
+        {submitting ? '제출 중...' : currentIndex + 1 >= total ? '제출' : '다음 질문'}
+      </Button>
+    </Card>
   )
 }
 
