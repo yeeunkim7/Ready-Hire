@@ -34,11 +34,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw new CustomException(ErrorCode.OAUTH2_EMAIL_NOT_FOUND);
         }
 
-        User user = userRepository.findByEmail(email)
-            .map(existing -> updateExistingUser(existing, userInfo))
-            .orElseGet(() -> createNewSocialUser(userInfo));
+        String normalizedEmail = email.trim().toLowerCase();
+        User user = resolveOAuthUser(normalizedEmail, userInfo);
 
-        log.info("OAuth2 login success: provider={}, email={}, userId={}", userInfo.getProvider(), email, user.getId());
+        log.info("OAuth2 login success: provider={}, email={}, userId={}", userInfo.getProvider(), normalizedEmail, user.getId());
         return new OAuth2UserPrincipal(user, oauth2User.getAttributes());
     }
 
@@ -49,15 +48,36 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         throw new CustomException(ErrorCode.OAUTH2_PROVIDER_NOT_SUPPORTED);
     }
 
-    private User updateExistingUser(User user, OAuth2UserInfo userInfo) {
-        user.setProvider(Provider.GOOGLE);
+    private User resolveOAuthUser(String email, OAuth2UserInfo userInfo) {
+        return userRepository.findByEmailAndProvider(email, Provider.GOOGLE)
+            .map(existing -> updateExistingGoogleUser(existing, userInfo))
+            .orElseGet(() -> registerGoogleUser(email, userInfo));
+    }
+
+    private User updateExistingGoogleUser(User user, OAuth2UserInfo userInfo) {
+        if (user.isDeleted()) {
+            throw new CustomException(ErrorCode.ACCOUNT_WITHDRAWN);
+        }
         user.setProviderUserId(userInfo.getProviderId());
         return userRepository.save(user);
     }
 
-    private User createNewSocialUser(OAuth2UserInfo userInfo) {
+    private User registerGoogleUser(String email, OAuth2UserInfo userInfo) {
+        userRepository.findByEmailAndProvider(email, Provider.LOCAL)
+            .filter(user -> !user.isDeleted())
+            .ifPresent(user -> {
+                throw new CustomException(
+                    ErrorCode.EMAIL_ALREADY_EXISTS,
+                    "이미 이메일로 가입된 계정입니다. 이메일 로그인을 이용해 주세요."
+                );
+            });
+
+        return createNewSocialUser(email, userInfo);
+    }
+
+    private User createNewSocialUser(String email, OAuth2UserInfo userInfo) {
         User user = User.builder()
-            .email(userInfo.getEmail())
+            .email(email)
             .passwordHash(null)
             .provider(Provider.GOOGLE)
             .providerUserId(userInfo.getProviderId())

@@ -4,8 +4,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
@@ -15,15 +15,16 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
-    @Value("${app.oauth2.redirect-uri}")
-    private String redirectUri;
+    private final OAuth2FrontendUrls oAuth2FrontendUrls;
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
         throws IOException, ServletException {
-        log.warn("OAuth2 login failed: {}", exception.getMessage());
-        getRedirectStrategy().sendRedirect(request, response, redirectUri + "/error?message=oauth2_failed");
+        String errorCode = OAuth2AuthErrors.resolveLoginErrorCode(exception);
+        log.warn("OAuth2 login failed: errorCode={}, message={}", errorCode, exception.getMessage());
+        getRedirectStrategy().sendRedirect(request, response, oAuth2FrontendUrls.loginUrl(errorCode));
     }
 }

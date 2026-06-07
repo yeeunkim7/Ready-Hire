@@ -14,7 +14,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -31,9 +30,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRefreshTokenRepository userRefreshTokenRepository;
     private final UserRepository userRepository;
-
-    @Value("${app.oauth2.redirect-uri}")
-    private String redirectUri;
+    private final OAuth2FrontendUrls oAuth2FrontendUrls;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
@@ -41,7 +38,15 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         Object principal = authentication.getPrincipal();
         if (!(principal instanceof CustomUserDetails userDetails)) {
             log.error("OAuth2 principal type mismatch: {}", principal == null ? "null" : principal.getClass().getName());
-            getRedirectStrategy().sendRedirect(request, response, redirectUri + "/error?message=oauth2_failed");
+            getRedirectStrategy().sendRedirect(request, response, oAuth2FrontendUrls.loginUrl("oauth2_failed"));
+            return;
+        }
+
+        User user = userRepository.findById(userDetails.getUserId())
+            .orElseThrow(() -> new CustomException(ErrorCode.AUTH_ERROR, "User not found for OAuth2 token save."));
+        if (user.isDeleted()) {
+            log.warn("OAuth2 login blocked for withdrawn account: userId={}", userDetails.getUserId());
+            getRedirectStrategy().sendRedirect(request, response, oAuth2FrontendUrls.loginUrl("account_withdrawn"));
             return;
         }
 
@@ -53,9 +58,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         );
         String refreshToken = jwtTokenProvider.createRefreshToken(userDetails.getUserId());
 
-        upsertRefreshToken(userDetails, refreshToken);
+        upsertRefreshToken(user, userDetails, refreshToken);
 
-        String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
+        String targetUrl = UriComponentsBuilder.fromUriString(oAuth2FrontendUrls.callbackUrl())
             .queryParam("accessToken", accessToken)
             .queryParam("refreshToken", refreshToken)
             .build()
@@ -65,10 +70,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 
-    private void upsertRefreshToken(CustomUserDetails userDetails, String refreshToken) {
-        User user = userRepository.findById(userDetails.getUserId())
-            .orElseThrow(() -> new CustomException(ErrorCode.AUTH_ERROR, "User not found for OAuth2 token save."));
-
+    private void upsertRefreshToken(User user, CustomUserDetails userDetails, String refreshToken) {
         UserRefreshToken tokenEntity = userRefreshTokenRepository.findByUserId(userDetails.getUserId())
             .orElseGet(UserRefreshToken::new);
 

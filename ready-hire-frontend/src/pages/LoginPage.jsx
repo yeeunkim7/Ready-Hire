@@ -4,6 +4,12 @@ import { login as loginApi } from '../api/auth.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useToast } from '../contexts/ToastContext.jsx'
 
+const OAUTH_ERROR_MESSAGES = {
+  oauth2_failed: '로그인에 실패했습니다. 다시 시도해 주세요.',
+  email_already_exists: '이미 이메일로 가입된 계정입니다. 이메일 로그인을 이용해 주세요.',
+  account_withdrawn: '탈퇴한 계정입니다.',
+}
+
 function LoginPage() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -22,10 +28,9 @@ function LoginPage() {
   const error = new URLSearchParams(location.search).get('error')
 
   useEffect(() => {
-    if (error === 'oauth2_failed') {
-      showToast('로그인에 실패했습니다. 다시 시도해 주세요.', 'error')
-      navigate('/login', { replace: true })
-    }
+    if (!error || !OAUTH_ERROR_MESSAGES[error]) return
+    showToast(OAUTH_ERROR_MESSAGES[error], 'error')
+    navigate('/login', { replace: true })
   }, [error, navigate, showToast])
 
   const handleEmailLogin = async (event) => {

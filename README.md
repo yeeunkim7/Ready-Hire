@@ -101,19 +101,33 @@ git push origin main
 
 워크플로: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
 
+### 운영 URL 통일 체크리스트
+
+아래 4곳의 URL이 **항상 동일**해야 OAuth·API·CORS가 정상 동작합니다.
+
+| # | 위치 | Frontend | Backend API | OAuth Callback |
+|---|------|----------|-------------|----------------|
+| 1 | **README (canonical)** | `https://ready-hire-vert.vercel.app` | `https://ready-hire-api-fpdhhrd5abahhxhh.koreacentral-01.azurewebsites.net` | `https://ready-hire-vert.vercel.app/oauth2/callback` |
+| 2 | **Vercel** (`VITE_*`) | — | `VITE_API_BASE_URL` | `VITE_OAUTH2_REDIRECT_URI` |
+| 3 | **Azure App Settings** | `CORS_ALLOWED_ORIGINS` | — | `OAUTH2_REDIRECT_URI` |
+| 4 | **Google OAuth Console** | — | Authorized redirect: `{Azure API}/login/oauth2/code/google` | — |
+
+참고 파일: `ready-hire-frontend/.env.production`, `ready-hire-frontend/.env.example`, `application-prod.yml`
+
 ### Azure App Service (참고)
 
 | 항목 | 값 |
 |------|-----|
 | Startup Command | `java -jar /home/site/wwwroot/app.jar` |
 | `OAUTH2_REDIRECT_URI` | `https://ready-hire-vert.vercel.app/oauth2/callback` |
-| Google Redirect URI | `{baseUrl}/login/oauth2/code/google` |
+| `CORS_ALLOWED_ORIGINS` | `https://ready-hire-vert.vercel.app` |
+| Google Redirect URI | `https://ready-hire-api-fpdhhrd5abahhxhh.koreacentral-01.azurewebsites.net/login/oauth2/code/google` |
 
 ### Vercel Environment Variables
 
-| Key | 설명 |
-|-----|------|
-| `VITE_API_BASE_URL` | Azure Backend API URL |
+| Key | 값 (운영) |
+|-----|-----------|
+| `VITE_API_BASE_URL` | `https://ready-hire-api-fpdhhrd5abahhxhh.koreacentral-01.azurewebsites.net` |
 | `VITE_OAUTH2_REDIRECT_URI` | `https://ready-hire-vert.vercel.app/oauth2/callback` |
 | `VITE_PORTONE_CHANNEL_KEY` | 포트원 채널 키 |
 
