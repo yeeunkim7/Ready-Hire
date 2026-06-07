@@ -76,25 +76,39 @@ function DashboardPage() {
           ) : history.length === 0 ? (
             <p className="mt-4 text-sm text-gray-500">아직 면접 기록이 없습니다.</p>
           ) : (
-            <ul className="mt-4 space-y-3">
-              {history.slice(0, 5).map((item) => (
-                <li key={item.interviewId ?? item.id} className="rounded-xl border border-gray-100 p-4">
+            <>
+              <ul className="mt-4 space-y-3">
+                {history.map((item) => (
+                  <li key={item.interviewId ?? item.id} className="rounded-xl border border-gray-100 p-4">
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between text-left"
+                      onClick={() => navigate(`/interview/${item.interviewId ?? item.id}/result`)}
+                    >
+                      <div>
+                        <p className="font-medium">{item.jobRole ?? item.position ?? '직무 미지정'}</p>
+                        <p className="text-sm text-gray-500">
+                          {item.createdAt ? new Date(item.createdAt).toLocaleString() : '날짜 정보 없음'}
+                        </p>
+                      </div>
+                      <span className="text-sm text-gray-600">{item.status ?? 'COMPLETED'}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {isFree && history.length >= 3 && (
+                <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+                  <p>📋 최근 3건만 표시됩니다. 전체 히스토리는 PRO 플랜에서 확인하세요.</p>
                   <button
                     type="button"
-                    className="flex w-full items-center justify-between text-left"
-                    onClick={() => navigate(`/interview/${item.interviewId ?? item.id}/result`)}
+                    onClick={() => navigate('/subscription')}
+                    className="mt-2 font-semibold text-primary underline"
                   >
-                    <div>
-                      <p className="font-medium">{item.jobRole ?? item.position ?? '직무 미지정'}</p>
-                      <p className="text-sm text-gray-500">
-                        {item.createdAt ? new Date(item.createdAt).toLocaleString() : '날짜 정보 없음'}
-                      </p>
-                    </div>
-                    <span className="text-sm text-gray-600">{item.status ?? 'COMPLETED'}</span>
+                    PRO 업그레이드 →
                   </button>
-                </li>
-              ))}
-            </ul>
+                </div>
+              )}
+            </>
           )}
         </section>
       </main>

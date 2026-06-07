@@ -85,6 +85,12 @@ public class InterviewService {
         List<String> techStack = normalizeTechStack(request.getTechStack());
         validateStartRequest(request, interviewMode, techStack);
 
+        if ((MODE_JOB_POSTING.equals(interviewMode) || MODE_PORTFOLIO.equals(interviewMode))
+            && user.getPlanType() != PlanType.PRO) {
+            log.info("[Interview] PRO plan required: userId={}, mode={}", userId, interviewMode);
+            throw new CustomException(ErrorCode.PRO_PLAN_REQUIRED);
+        }
+
         LocalDate today = LocalDate.now();
         DailyUsage dailyUsage = null;
 
@@ -182,8 +188,18 @@ public class InterviewService {
 
     @Transactional(readOnly = true)
     public List<InterviewSummaryDto> getHistory(Long userId) {
-        return interviewRepository.findByUser_IdOrderByCreatedAtDesc(userId)
-            .stream()
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        List<Interview> interviews = interviewRepository.findByUser_IdOrderByCreatedAtDesc(userId);
+
+        if (user.getPlanType() != PlanType.PRO) {
+            interviews = interviews.stream()
+                .limit(3)
+                .collect(Collectors.toList());
+        }
+
+        return interviews.stream()
             .map(InterviewSummaryDto::from)
             .collect(Collectors.toList());
     }

@@ -1,9 +1,13 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { parsePdf, startInterview } from '../api/interview.js'
+import ConfirmModal from '../components/ConfirmModal.jsx'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
 import Navbar from '../components/Navbar.jsx'
+import { useAuth } from '../contexts/AuthContext.jsx'
 import { useToast } from '../contexts/ToastContext.jsx'
+
+const PRO_PDF_BANNER_KEY = 'pro_pdf_banner_dismissed'
 
 const INTERVIEW_MODES = {
   STANDARD: 'STANDARD',
@@ -88,10 +92,19 @@ const PDF_MODE_CONFIG = {
  */
 function InterviewSetupPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { showToast } = useToast()
   const fileInputRef = useRef(null)
 
+  const isPro = String(user?.planType ?? 'FREE').toUpperCase() === 'PRO'
+  const isPdfModeLocked = (mode) =>
+    !isPro && (mode === INTERVIEW_MODES.JOB_POSTING || mode === INTERVIEW_MODES.PORTFOLIO)
+
   const [interviewMode, setInterviewMode] = useState(INTERVIEW_MODES.STANDARD)
+  const [showProModal, setShowProModal] = useState(false)
+  const [proBannerDismissed, setProBannerDismissed] = useState(
+    () => sessionStorage.getItem(PRO_PDF_BANNER_KEY) === 'true',
+  )
   const [category, setCategory] = useState('개발/IT')
   const [jobRole, setJobRole] = useState(JOB_CATEGORIES['개발/IT'].roles[0])
   const [customJobRole, setCustomJobRole] = useState('')
@@ -124,9 +137,18 @@ function InterviewSetupPage() {
   }
 
   const handleModeChange = (nextMode) => {
+    if (isPdfModeLocked(nextMode)) {
+      setShowProModal(true)
+      return
+    }
     setInterviewMode(nextMode)
     setPdfCharCount(0)
     setDragActive(false)
+  }
+
+  const dismissProBanner = () => {
+    sessionStorage.setItem(PRO_PDF_BANNER_KEY, 'true')
+    setProBannerDismissed(true)
   }
 
   const toggleStack = (stack) => {
@@ -264,11 +286,36 @@ function InterviewSetupPage() {
                     interviewMode === mode.id ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700'
                   }`}
                 >
-                  {mode.label}
+                  {isPdfModeLocked(mode.id) ? `🔒 ${mode.label}` : mode.label}
                 </button>
               ))}
             </div>
           </div>
+
+          {interviewMode === INTERVIEW_MODES.STANDARD && !isPro && !proBannerDismissed && (
+            <div className="mt-4 flex items-start justify-between gap-3 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+              <p>
+                💡 PRO 플랜에서는 채용공고/포트폴리오 PDF를 업로드해서 맞춤형 면접을 볼 수 있어요!
+              </p>
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate('/subscription')}
+                  className="whitespace-nowrap text-sm font-semibold text-primary underline"
+                >
+                  PRO 알아보기
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissProBanner}
+                  className="text-gray-500 hover:text-gray-700"
+                  aria-label="안내 닫기"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
 
           {isPdfMode && pdfConfig && (
             <div className="mt-6">
@@ -407,6 +454,19 @@ function InterviewSetupPage() {
         </section>
         {loading && <LoadingSpinner message="질문을 생성하고 있어요..." />}
       </main>
+
+      <ConfirmModal
+        isOpen={showProModal}
+        title="🔒 PRO 플랜 전용 기능"
+        message="채용공고/포트폴리오 맞춤 면접은 PRO 플랜에서만 이용 가능합니다."
+        confirmText="PRO 업그레이드 →"
+        cancelText="닫기"
+        onConfirm={() => {
+          setShowProModal(false)
+          navigate('/subscription')
+        }}
+        onCancel={() => setShowProModal(false)}
+      />
     </div>
   )
 }

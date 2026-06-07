@@ -28,7 +28,9 @@ public enum ErrorCode {
     PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "PAYMENT_003", "결제 금액이 일치하지 않습니다."),
     PAYMENT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "PAYMENT_004", "이미 처리된 결제입니다."),
     PAYMENT_PORTONE_API_ERROR(HttpStatus.BAD_GATEWAY, "PAYMENT_005", "포트원 API 호출에 실패했습니다."),
-    SUBSCRIPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_006", "활성 구독 정보를 찾을 수 없습니다.");
+    SUBSCRIPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_006", "활성 구독 정보를 찾을 수 없습니다."),
+    PRO_PLAN_REQUIRED(HttpStatus.FORBIDDEN, "PLAN_001", "PRO 플랜에서만 사용 가능한 기능입니다."),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_001", "사용자를 찾을 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
