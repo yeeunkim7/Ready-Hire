@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types'
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
-import { logout as logoutApi } from '../api/auth.js'
-import { clearTokens, getStoredUser, setStoredUser, setTokens } from '../utils/token.js'
+import { logout as logoutApi, refreshToken as refreshTokenApi } from '../api/auth.js'
+import { clearTokens, getRefreshToken, getStoredUser, setStoredUser, setTokens } from '../utils/token.js'
+import { unwrapApiData } from '../utils/unwrapApi.js'
 import { notifyToast } from '../utils/toastNotify.js'
 
 const AuthContext = createContext(null)
@@ -49,6 +50,29 @@ export function AuthProvider({ children }) {
     setUser(normalizedUser)
   }
 
+  const refreshSession = useCallback(async () => {
+    const token = getRefreshToken()
+    if (!token) {
+      return false
+    }
+    try {
+      const response = await refreshTokenApi(token)
+      const tokens = unwrapApiData(response)
+      if (!tokens?.accessToken) {
+        return false
+      }
+      setTokens(tokens.accessToken, tokens.refreshToken ?? token)
+      const payload = parseJwtPayload(tokens.accessToken) || {}
+      updateUser({
+        email: payload.email ?? user?.email ?? '',
+        planType: payload.planType ?? 'FREE',
+      })
+      return true
+    } catch {
+      return false
+    }
+  }, [updateUser, user?.email])
+
   const logout = async () => {
     try {
       const refreshToken = localStorage.getItem('refreshToken')
@@ -70,8 +94,9 @@ export function AuthProvider({ children }) {
       login,
       logout,
       updateUser,
+      refreshSession,
     }),
-    [user, updateUser],
+    [user, updateUser, refreshSession],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

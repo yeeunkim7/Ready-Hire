@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getInterviewHistory } from '../api/interview.js'
+import { getTodayUsage } from '../api/usage.js'
 import Navbar from '../components/Navbar.jsx'
 import PlanBadge from '../components/PlanBadge.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
@@ -10,30 +11,33 @@ import { useAuth } from '../contexts/AuthContext.jsx'
  */
 function DashboardPage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
   const [loading, setLoading] = useState(true)
   const [history, setHistory] = useState([])
+  const [remainingFreeCount, setRemainingFreeCount] = useState(3)
 
   useEffect(() => {
-    const fetchHistory = async () => {
+    const fetchDashboard = async () => {
       try {
         setLoading(true)
-        const items = await getInterviewHistory()
+        const [items, usage] = await Promise.all([getInterviewHistory(), getTodayUsage()])
         setHistory(Array.isArray(items) ? items : [])
+        if (usage?.planType) {
+          updateUser({ planType: usage.planType })
+        }
+        if (usage?.unlimited) {
+          setRemainingFreeCount(0)
+        } else {
+          setRemainingFreeCount(usage?.remainingCount ?? 3)
+        }
       } catch {
         /* 토스트는 axios / unwrap */
       } finally {
         setLoading(false)
       }
     }
-    fetchHistory()
-  }, [])
-
-  const remainingFreeCount = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10)
-    const todaysCount = history.filter((item) => (item.createdAt ?? '').slice(0, 10) === today).length
-    return Math.max(0, 3 - todaysCount)
-  }, [history])
+    fetchDashboard()
+  }, [updateUser])
 
   const isFree = String(user?.planType ?? 'FREE').toUpperCase() !== 'PRO'
 

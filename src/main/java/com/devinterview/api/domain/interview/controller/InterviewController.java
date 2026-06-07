@@ -41,7 +41,7 @@ public class InterviewController {
         @AuthenticationPrincipal CustomUserDetails userDetails,
         @RequestParam("file") MultipartFile file
     ) {
-        PdfParseResponse response = interviewService.parsePdf(file);
+        PdfParseResponse response = interviewService.parsePdf(userDetails.getUserId(), file);
         return ResponseEntity.ok(ApiResponse.success("PDF 텍스트 추출이 완료되었습니다.", response));
     }
 

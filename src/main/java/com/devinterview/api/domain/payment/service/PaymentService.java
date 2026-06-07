@@ -39,6 +39,7 @@ public class PaymentService {
     private final SubscriptionRepository subscriptionRepository;
     private final PaymentRepository paymentRepository;
     private final PortOneClient portOneClient;
+    private final SubscriptionPlanSyncService subscriptionPlanSyncService;
 
     private final int subscriptionPrice;
     private final int subscriptionDurationDays;
@@ -48,6 +49,7 @@ public class PaymentService {
         SubscriptionRepository subscriptionRepository,
         PaymentRepository paymentRepository,
         PortOneClient portOneClient,
+        SubscriptionPlanSyncService subscriptionPlanSyncService,
         @Value("${app.subscription.price}") int subscriptionPrice,
         @Value("${app.subscription.duration-days:30}") int subscriptionDurationDays
     ) {
@@ -55,6 +57,7 @@ public class PaymentService {
         this.subscriptionRepository = subscriptionRepository;
         this.paymentRepository = paymentRepository;
         this.portOneClient = portOneClient;
+        this.subscriptionPlanSyncService = subscriptionPlanSyncService;
         this.subscriptionPrice = subscriptionPrice;
         this.subscriptionDurationDays = subscriptionDurationDays;
     }
@@ -121,10 +124,9 @@ public class PaymentService {
             .build();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public SubscriptionStatusResponse getSubscriptionStatus(Long userId) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new CustomException(ErrorCode.AUTH_ERROR, "사용자를 찾을 수 없습니다."));
+        User user = subscriptionPlanSyncService.syncUserPlan(userId);
 
         Subscription active = subscriptionRepository.findByUser_IdAndStatus(userId, SubscriptionStatus.ACTIVE).orElse(null);
 

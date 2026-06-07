@@ -28,6 +28,7 @@ import com.devinterview.api.domain.interview.repository.InterviewAnswerRepositor
 import com.devinterview.api.domain.interview.repository.InterviewQuestionRepository;
 import com.devinterview.api.domain.interview.repository.InterviewResultRepository;
 import com.devinterview.api.domain.interview.repository.InterviewRepository;
+import com.devinterview.api.domain.payment.service.SubscriptionPlanSyncService;
 import com.devinterview.api.domain.repository.UserRepository;
 import com.devinterview.api.domain.usage.entity.DailyUsage;
 import com.devinterview.api.domain.usage.repository.DailyUsageRepository;
@@ -70,16 +71,21 @@ public class InterviewService {
     private final ChatService chatService;
     private final ObjectMapper objectMapper;
     private final PdfTextExtractor pdfTextExtractor;
+    private final SubscriptionPlanSyncService subscriptionPlanSyncService;
 
-    public PdfParseResponse parsePdf(MultipartFile file) {
+    public PdfParseResponse parsePdf(Long userId, MultipartFile file) {
+        User user = subscriptionPlanSyncService.syncUserPlan(userId);
+        if (user.getPlanType() != PlanType.PRO) {
+            log.info("[Interview] PRO plan required for PDF parse: userId={}", userId);
+            throw new CustomException(ErrorCode.PRO_PLAN_REQUIRED);
+        }
         String text = pdfTextExtractor.extract(file);
         return new PdfParseResponse(text, text.length());
     }
 
     @Transactional
     public InterviewStartResponse startInterview(Long userId, InterviewStartRequest request) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new CustomException(ErrorCode.AUTH_ERROR, "사용자를 찾을 수 없습니다."));
+        User user = subscriptionPlanSyncService.syncUserPlan(userId);
 
         String interviewMode = resolveInterviewMode(request.getInterviewMode());
         List<String> techStack = normalizeTechStack(request.getTechStack());
@@ -188,8 +194,7 @@ public class InterviewService {
 
     @Transactional(readOnly = true)
     public List<InterviewSummaryDto> getHistory(Long userId) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        User user = subscriptionPlanSyncService.syncUserPlan(userId);
 
         List<Interview> interviews = interviewRepository.findByUser_IdOrderByCreatedAtDesc(userId);
 

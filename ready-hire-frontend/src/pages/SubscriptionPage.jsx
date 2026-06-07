@@ -12,7 +12,7 @@ import { useToast } from '../contexts/ToastContext.jsx'
  */
 function SubscriptionPage() {
   const navigate = useNavigate()
-  const { user, updateUser } = useAuth()
+  const { user, refreshSession } = useAuth()
   const { showToast } = useToast()
   const [loading, setLoading] = useState(true)
   const [subscription, setSubscription] = useState(null)
@@ -69,12 +69,12 @@ function SubscriptionPage() {
               showToast(rsp?.error_msg || '결제가 취소되었습니다.', 'error')
               return
             }
-            const data = await verifyPayment({
+            await verifyPayment({
               paymentId: rsp.imp_uid,
               orderName: 'Ready-Hire PRO 월간 구독',
               amount: 9900,
             })
-            updateUser({ planType: data?.planType ?? 'PRO' })
+            await refreshSession()
             showToast('PRO 구독이 활성화되었습니다.', 'success')
             await loadSubscription()
           } catch {
@@ -93,7 +93,7 @@ function SubscriptionPage() {
   const handleCancelConfirm = async () => {
     try {
       await cancelSubscription()
-      updateUser({ planType: 'FREE' })
+      await refreshSession()
       showToast('구독이 해지되었습니다.', 'success')
       setCancelOpen(false)
       await loadSubscription()

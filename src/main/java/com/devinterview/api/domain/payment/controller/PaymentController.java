@@ -9,6 +9,8 @@ import com.devinterview.api.security.user.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,6 +30,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class PaymentController {
 
     private final PaymentService paymentService;
+
+    @Value("${portone.webhook.secret:}")
+    private String webhookSecret;
 
     @PostMapping("/verify")
     public ResponseEntity<ApiResponse<PaymentVerifyResponse>> verify(
@@ -55,7 +60,15 @@ public class PaymentController {
     }
 
     @PostMapping("/webhook")
-    public ResponseEntity<ApiResponse<Void>> webhook(@RequestBody String payload) {
+    public ResponseEntity<ApiResponse<Void>> webhook(
+        @org.springframework.web.bind.annotation.RequestHeader(value = "X-PortOne-Webhook-Secret", required = false) String secret,
+        @RequestBody String payload
+    ) {
+        if (webhookSecret != null && !webhookSecret.isBlank() && !webhookSecret.equals(secret)) {
+            log.warn("[Payment] Webhook rejected: invalid secret");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.failure("Invalid webhook secret."));
+        }
         log.info("[Payment] PortOne webhook received, length={}", payload == null ? 0 : payload.length());
         return ResponseEntity.ok(ApiResponse.success("accepted", null));
     }

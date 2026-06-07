@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { clearTokens, getAccessToken, getRefreshToken, setTokens } from '../utils/token.js'
 import { notifyToast } from '../utils/toastNotify.js'
+import { unwrapApiData } from '../utils/unwrapApi.js'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -60,8 +61,9 @@ api.interceptors.response.use(
         `${import.meta.env.VITE_API_BASE_URL}/api/auth/refresh`,
         { refreshToken },
       )
-      const newAccessToken = response.data?.accessToken
-      const newRefreshToken = response.data?.refreshToken ?? refreshToken
+      const tokens = unwrapApiData(response)
+      const newAccessToken = tokens?.accessToken
+      const newRefreshToken = tokens?.refreshToken ?? refreshToken
 
       if (!newAccessToken) {
         throw new Error('토큰 재발급 응답이 올바르지 않습니다.')

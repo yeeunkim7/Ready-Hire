@@ -10,7 +10,10 @@ import com.devinterview.api.security.filter.JwtAuthenticationFilter;
 import com.devinterview.api.security.user.CustomUserDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -40,6 +43,9 @@ public class SecurityConfig {
     private final CorsConfigurationSource corsConfigurationSource;
     private final ObjectMapper objectMapper;
 
+    @Value("${app.swagger.enabled:true}")
+    private boolean swaggerEnabled;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -58,16 +64,22 @@ public class SecurityConfig {
                 }
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
             }))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                        "/api/auth/**",
-                        "/api/payments/webhook",
-                        "/swagger-ui/**",
-                        "/v3/api-docs/**",
-                        "/login/oauth2/**",
-                        "/oauth2/**").permitAll()
-                .anyRequest().authenticated()
-            )
+            .authorizeHttpRequests(auth -> {
+                List<String> publicPaths = new ArrayList<>(List.of(
+                    "/api/auth/**",
+                    "/api/health",
+                    "/api/health/**",
+                    "/api/payments/webhook",
+                    "/login/oauth2/**",
+                    "/oauth2/**"
+                ));
+                if (swaggerEnabled) {
+                    publicPaths.add("/swagger-ui/**");
+                    publicPaths.add("/v3/api-docs/**");
+                }
+                auth.requestMatchers(publicPaths.toArray(String[]::new)).permitAll()
+                    .anyRequest().authenticated();
+            })
             .oauth2Login(oauth2 -> oauth2
                 .authorizationEndpoint(auth -> auth
                     .authorizationRequestRepository(cookieOAuth2AuthorizationRequestRepository)

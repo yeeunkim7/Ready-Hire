@@ -64,10 +64,13 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,https://ready-hire-vert.vercel.app}
   oauth2:
-    redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/callback}
+    redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:5173/oauth2/callback}
+  swagger:
+    enabled: ${SWAGGER_ENABLED:true}
   subscription:
     price: 9900
     duration-days: 30
+    expiry-cron: ${SUBSCRIPTION_EXPIRY_CRON:0 0 * * * *}
 
 portone:
   v2:
@@ -75,12 +78,14 @@ portone:
     channel-key: ${PORTONE_CHANNEL_KEY:}
     base-url: ${PORTONE_BASE_URL:https://api.portone.io}
     timeout-seconds: ${PORTONE_TIMEOUT_SECONDS:10}
+  webhook:
+    secret: ${PORTONE_WEBHOOK_SECRET:}
 
 springdoc:
   api-docs:
-    enabled: true
+    enabled: ${SWAGGER_ENABLED:true}
   swagger-ui:
-    enabled: true
+    enabled: ${SWAGGER_ENABLED:true}
     path: /swagger-ui.html
 
 logging:
