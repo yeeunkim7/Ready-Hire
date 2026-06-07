@@ -5,16 +5,12 @@ import com.devinterview.api.auth.dto.LogoutRequest;
 import com.devinterview.api.auth.dto.RefreshRequest;
 import com.devinterview.api.auth.dto.SignupRequest;
 import com.devinterview.api.auth.dto.SignupResponse;
-import com.devinterview.api.auth.dto.WithdrawRequest;
 import com.devinterview.api.auth.service.AuthService;
 import com.devinterview.api.common.dto.ApiResponse;
-import com.devinterview.api.security.user.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,14 +44,5 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody LogoutRequest request) {
         authService.logout(request.refreshToken());
         return ResponseEntity.ok(ApiResponse.success("Logged out successfully."));
-    }
-
-    @DeleteMapping("/withdraw")
-    public ResponseEntity<ApiResponse<Void>> withdraw(
-        @AuthenticationPrincipal CustomUserDetails userDetails,
-        @Valid @RequestBody WithdrawRequest request
-    ) {
-        authService.withdraw(userDetails.getUserId(), request.refreshToken());
-        return ResponseEntity.ok(ApiResponse.success("회원 탈퇴가 완료되었습니다."));
     }
 }

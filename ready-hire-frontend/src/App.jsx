@@ -4,7 +4,7 @@ import DashboardPage from './pages/DashboardPage.jsx'
 import InterviewPage from './pages/InterviewPage.jsx'
 import InterviewResultPage from './pages/InterviewResultPage.jsx'
 import InterviewSetupPage from './pages/InterviewSetupPage.jsx'
-import AccountPage from './pages/AccountPage.jsx'
+import MyPage from './pages/MyPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import SignupPage from './pages/SignupPage.jsx'
 import OAuth2CallbackPage from './pages/OAuth2CallbackPage.jsx'
@@ -50,10 +50,10 @@ function App() {
         }
       />
       <Route
-        path="/account"
+        path="/mypage"
         element={
           <PrivateRoute>
-            <AccountPage />
+            <MyPage />
           </PrivateRoute>
         }
       />

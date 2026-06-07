@@ -17,6 +17,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -77,4 +78,11 @@ public class User extends BaseTimeEntity {
     @Column(name = "plan_type", nullable = false, length = 10)
     @ColumnDefault("'FREE'")
     private PlanType planType = PlanType.FREE;
+
+    @Column(name = "deleted_at", columnDefinition = "timestamptz")
+    private LocalDateTime deletedAt;
+
+    public boolean isDeleted() {
+        return deletedAt != null || accountStatus == AccountStatus.WITHDRAWN;
+    }
 }

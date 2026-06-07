@@ -62,4 +62,8 @@ public class CustomUserDetails implements UserDetails {
     public boolean isEnabled() {
         return accountStatus == AccountStatus.ACTIVE;
     }
+
+    public boolean isDeleted() {
+        return accountStatus == AccountStatus.WITHDRAWN;
+    }
 }

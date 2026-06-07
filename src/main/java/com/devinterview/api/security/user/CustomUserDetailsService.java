@@ -33,7 +33,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     private void validateActiveAccount(User user) {
-        if (user.getAccountStatus() == AccountStatus.WITHDRAWN) {
+        if (user.isDeleted()) {
             throw new CustomException(ErrorCode.ACCOUNT_WITHDRAWN);
         }
     }

@@ -26,8 +26,8 @@ function Navbar() {
           <button type="button" onClick={() => navigate('/subscription')} className="text-sm text-primary underline">
             구독 관리
           </button>
-          <button type="button" onClick={() => navigate('/account')} className="text-sm text-gray-600 underline">
-            계정
+          <button type="button" onClick={() => navigate('/mypage')} className="text-sm text-gray-600 underline">
+            마이페이지
           </button>
           <button type="button" onClick={handleLogout} className="rounded-xl border border-gray-200 px-4 py-2 text-sm">
             로그아웃

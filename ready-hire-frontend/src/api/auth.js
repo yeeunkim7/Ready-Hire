@@ -15,7 +15,3 @@ export const refreshToken = (token) => axios.post('/api/auth/refresh', { refresh
 
 export const logout = (token) => axios.post('/api/auth/logout', { refreshToken: token })
 
-export const withdraw = async (refreshTokenValue) => {
-  const res = await axios.delete('/api/auth/withdraw', { data: { refreshToken: refreshTokenValue } })
-  return unwrapApiData(res)
-}

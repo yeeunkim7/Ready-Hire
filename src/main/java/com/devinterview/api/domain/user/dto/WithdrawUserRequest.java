@@ -1,8 +1,8 @@
-package com.devinterview.api.auth.dto;
+package com.devinterview.api.domain.user.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record WithdrawRequest(
+public record WithdrawUserRequest(
     @NotBlank String refreshToken
 ) {
 }

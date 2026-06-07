@@ -13,8 +13,6 @@ import com.devinterview.api.domain.enums.AccountStatus;
 import com.devinterview.api.domain.enums.PlanType;
 import com.devinterview.api.domain.enums.Provider;
 import com.devinterview.api.domain.enums.Role;
-import com.devinterview.api.domain.enums.SubscriptionStatus;
-import com.devinterview.api.domain.payment.repository.SubscriptionRepository;
 import com.devinterview.api.domain.repository.UserRepository;
 import com.devinterview.api.security.jwt.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
@@ -34,7 +32,6 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final UserRefreshTokenRepository userRefreshTokenRepository;
-    private final SubscriptionRepository subscriptionRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -49,7 +46,7 @@ public class AuthService {
             throw new CustomException(ErrorCode.PASSWORD_MISMATCH);
         }
 
-        if (userRepository.existsByEmailAndProvider(email, Provider.LOCAL)) {
+        if (userRepository.existsByEmailAndProviderAndDeletedAtIsNull(email, Provider.LOCAL)) {
             throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
@@ -71,7 +68,7 @@ public class AuthService {
 
     @Transactional
     public AuthTokenResponse issueTokens(User user) {
-        if (user.getAccountStatus() == AccountStatus.WITHDRAWN) {
+        if (user.isDeleted()) {
             throw new CustomException(ErrorCode.ACCOUNT_WITHDRAWN);
         }
 
@@ -110,7 +107,7 @@ public class AuthService {
         }
 
         User user = saved.getUser();
-        if (user.getAccountStatus() == AccountStatus.WITHDRAWN) {
+        if (user.isDeleted()) {
             saved.setRevoked(true);
             throw new CustomException(ErrorCode.ACCOUNT_WITHDRAWN);
         }
@@ -133,28 +130,6 @@ public class AuthService {
     @Transactional
     public void logout(String refreshToken) {
         userRefreshTokenRepository.findByRefreshToken(refreshToken).ifPresent(token -> token.setRevoked(true));
-    }
-
-    @Transactional
-    public void withdraw(Long userId, String refreshToken) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        if (user.getAccountStatus() == AccountStatus.WITHDRAWN) {
-            throw new CustomException(ErrorCode.ACCOUNT_WITHDRAWN);
-        }
-
-        subscriptionRepository.findByUser_IdAndStatus(userId, SubscriptionStatus.ACTIVE)
-            .ifPresent(subscription -> subscription.setStatus(SubscriptionStatus.CANCELLED));
-
-        user.setAccountStatus(AccountStatus.WITHDRAWN);
-        user.setPlanType(PlanType.FREE);
-        user.setPasswordHash(null);
-
-        userRefreshTokenRepository.findByRefreshToken(refreshToken).ifPresent(token -> token.setRevoked(true));
-        userRefreshTokenRepository.findByUserId(userId).ifPresent(token -> token.setRevoked(true));
-
-        log.info("[Auth] Account withdrawn: userId={}, provider={}", userId, user.getProvider());
     }
 
     private void upsertRefreshToken(User user, String refreshToken) {
